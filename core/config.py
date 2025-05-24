@@ -6,8 +6,7 @@ import os
 import logging
 import json # Necesario para el manejo del JSON en el validador
 from typing import Dict, List, Any, Optional # Eliminado Set
-from pydantic import field_validator, ValidationError # Eliminado EmailStr
-from pydantic_settings import BaseSettings # Usar pydantic-settings
+from pydantic import validator, ValidationError, BaseSettings # Cambiado field_validator a validator y BaseSettings importada desde pydantic
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env (primero)
@@ -107,7 +106,7 @@ class Settings(BaseSettings):
     }
 
     # Validador para SUPPORTED_LANGUAGES para intentar parsear desde env como JSON
-    @field_validator('SUPPORTED_LANGUAGES', mode='before')
+    @validator('SUPPORTED_LANGUAGES', pre=True, always=True)
     @classmethod
     def parse_supported_languages(cls, v: Any) -> List[str]:
         default_languages = ["es", "ca", "en", "ar"] # Valor predeterminado explícito
