@@ -13,7 +13,7 @@ ignore = [
 ]
 
 # Configuración específica para ciertos directorios
-[per-file-ignores]
+[lint.per-file-ignores]
 "tests/*" = ["ANN", "S101", "PLR2004", "E501"]
 "ai/langgraph/*" = ["E501"]
 
@@ -29,7 +29,7 @@ known-first-party = ["ai", "api", "core", "db", "services", "utils"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 # Configuración para anotaciones de tipo
-[lint.annotations]
+[lint.flake8-annotations]
 allow-star-arg-any = true
 suppress-none-returning = true
 

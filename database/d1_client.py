@@ -4,7 +4,6 @@ Cliente para interactuar con la base de datos Supabase.
 Proporciona funciones asíncronas para gestionar pacientes, sesiones, etc.
 """
 import json
-import logging
 from typing import Dict, List, Any, Optional # ASEGURAR QUE Dict, List, etc. están importados
 from datetime import datetime, timezone, timedelta
 
@@ -15,7 +14,7 @@ supabase = SupabaseClient()
 
 # Constantes para nombres de tablas
 TABLE_AUSENCIAS_TERAPEUTAS = "ausencias_terapeutas"
-TABLE_CITAS = "citas"
+TABLE_APPOINTMENTS = "appointments"
 TABLE_CONFIGURACIONES = "configuraciones"
 TABLE_DIAGNOSTICOS_PACIENTES = "diagnosticos_pacientes"
 TABLE_DOCUMENTOS = "documentos"
@@ -252,52 +251,66 @@ async def delete_patient(patient_id: str) -> Dict[str, Any]:
     except Exception as e: logger.error(f"Excepción en delete_patient: {e}", exc_info=True); return {"success": False, "error": str(e)}
 
 
-# --- Funciones para Citas ---
-async def get_all_citas(limit=1000, offset=0, sort_by="fecha_inicio", order="desc"):
-    logger.info(f"Consultando tabla '{TABLE_CITAS}', sort_by={sort_by}, order={order}.")
+# --- Funciones para Citas (Appointments) ---
+async def get_all_appointments(limit=1000, offset=0, sort_by="scheduled_date", order="desc"):
+    logger.info(f"Consultando tabla '{TABLE_APPOINTMENTS}', sort_by={sort_by}, order={order}.")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.query_table(TABLE_CITAS, lambda t: t.select("*", count='exact').order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1), use_service_key=True, handle_error=False)
-        return await _handle_supabase_response(api_response, "get_all_citas", TABLE_CITAS)
-    except Exception as e: logger.exception(f"Excepción general en get_all_citas: {e}"); return {"success": False, "results": [], "total": 0, "error": str(e)}
+        api_response = await supabase.query_table(TABLE_APPOINTMENTS, lambda t: t.select("*", count='exact').order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1), use_service_key=True, handle_error=False)
+        return await _handle_supabase_response(api_response, "get_all_appointments", TABLE_APPOINTMENTS, return_key_plural="appointments")
+    except Exception as e: logger.exception(f"Excepción general en get_all_appointments: {e}"); return {"success": False, "results": [], "total": 0, "error": str(e)}
 
-# Renombrar/refactorizar insert_session, get_session_by_id, etc. para que operen sobre TABLE_CITAS
-# y devuelvan la estructura consistente.
-async def insert_session(session_data: Dict[str, Any]) -> Dict[str, Any]: # Renombrado de insert_cita a insert_session
-    logger.info(f"Insertando sesión (cita): {session_data.get('paciente_id')}") # Cambiado log a sesión (cita)
+async def insert_appointment_record(appointment_data: Dict[str, Any]) -> Dict[str, Any]:
+    logger.info(f"Insertando cita (appointment): {appointment_data.get('client_id') if appointment_data else 'N/A'}") 
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.query_table(TABLE_CITAS, lambda t: t.insert(session_data), use_service_key=True, handle_error=False)
-        processed = await _handle_supabase_response(api_response, "insert_session", TABLE_CITAS, return_key_singular="session") # Cambiado a session
-        return {"success": processed["success"], "id": processed.get("session", {}).get("id") if processed.get("session") else None, "error": processed["error"]}
-    except Exception as e: logger.error(f"Excepción en insert_session: {e}", exc_info=True); return {"success": False, "id": None, "error": str(e)}
+        # Asegurar que scheduled_at es string ISO si existe y es datetime
+        if isinstance(appointment_data.get("scheduled_date"), datetime):
+            appointment_data["scheduled_date"] = appointment_data["scheduled_date"].date().isoformat()
+        if isinstance(appointment_data.get("start_time"), datetime.time):
+            appointment_data["start_time"] = appointment_data["start_time"].isoformat()
+        if isinstance(appointment_data.get("end_time"), datetime.time):
+            appointment_data["end_time"] = appointment_data["end_time"].isoformat()
+        
+        # Para upsert basado en calendly_event_uri si existe, o simple insert si no
+        if "calendly_event_uri" in appointment_data and appointment_data["calendly_event_uri"]:
+            if "email" in appointment_data and appointment_data["email"]: 
+                 appointment_data["invitee_email"] = appointment_data["invitee_email"].lower() # Asumiendo que esta clave existe
+            query_fn = lambda t: t.upsert(appointment_data, on_conflict="calendly_event_uri")
+        else:
+            query_fn = lambda t: t.insert(appointment_data)
 
-async def get_session_by_id(session_id: str) -> Dict[str, Any]: # Renombrado de get_cita_by_id a get_session_by_id
-    logger.info(f"Obteniendo sesión (cita) ID: {session_id}") # Cambiado log a sesión (cita)
+        api_response = await supabase.query_table(TABLE_APPOINTMENTS, query_fn, use_service_key=True, handle_error=False)
+        processed = await _handle_supabase_response(api_response, "insert_appointment_record", TABLE_APPOINTMENTS, return_key_singular="appointment")
+        return {"success": processed["success"], "id": processed.get("appointment", {}).get("id") if processed.get("appointment") else None, "error": processed["error"]}
+    except Exception as e: logger.error(f"Excepción en insert_appointment_record: {e}", exc_info=True); return {"success": False, "id": None, "error": str(e)}
+
+async def get_appointment_by_id(appointment_id: str) -> Dict[str, Any]:
+    logger.info(f"Obteniendo cita (appointment) ID: {appointment_id}") 
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.query_table(TABLE_CITAS, lambda t: t.select("*").eq('id', session_id).limit(1), use_service_key=True, handle_error=False)
-        processed = await _handle_supabase_response(api_response, "get_session_by_id", TABLE_CITAS, return_key_singular="session") # Cambiado a session
-        return {"success": processed["success"], "session": processed["session"], "error": processed["error"]}
-    except Exception as e: logger.error(f"Excepción en get_session_by_id: {e}", exc_info=True); return {"success": False, "session": None, "error": str(e)}
+        api_response = await supabase.query_table(TABLE_APPOINTMENTS, lambda t: t.select("*").eq('id', appointment_id).limit(1), use_service_key=True, handle_error=False)
+        processed = await _handle_supabase_response(api_response, "get_appointment_by_id", TABLE_APPOINTMENTS, return_key_singular="appointment")
+        return {"success": processed["success"], "appointment": processed["appointment"], "error": processed["error"]}
+    except Exception as e: logger.error(f"Excepción en get_appointment_by_id: {e}", exc_info=True); return {"success": False, "appointment": None, "error": str(e)}
 
-async def update_session(session_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]: # Renombrado de update_cita a update_session
-    logger.info(f"Actualizando sesión (cita) ID: {session_id}") # Cambiado log a sesión (cita)
+async def update_appointment_record(appointment_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]: 
+    logger.info(f"Actualizando cita (appointment) ID: {appointment_id}") 
     update_data.pop('id', None)
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.query_table(TABLE_CITAS, lambda t: t.update(update_data).eq('id', session_id), use_service_key=True, handle_error=False)
-        processed = await _handle_supabase_response(api_response, "update_session", TABLE_CITAS, return_key_singular="session") # Cambiado a session
-        return {"success": processed["success"], "session": processed["session"], "error": processed["error"]}
-    except Exception as e: logger.error(f"Excepción en update_session: {e}", exc_info=True); return {"success": False, "session": None, "error": str(e)}
+        api_response = await supabase.query_table(TABLE_APPOINTMENTS, lambda t: t.update(update_data).eq('id', appointment_id), use_service_key=True, handle_error=False)
+        processed = await _handle_supabase_response(api_response, "update_appointment_record", TABLE_APPOINTMENTS, return_key_singular="appointment")
+        return {"success": processed["success"], "appointment": processed["appointment"], "error": processed["error"]}
+    except Exception as e: logger.error(f"Excepción en update_appointment_record: {e}", exc_info=True); return {"success": False, "appointment": None, "error": str(e)}
 
-async def delete_session(session_id: str) -> Dict[str, Any]: # Renombrado de delete_cita a delete_session
-    logger.info(f"Eliminando sesión (cita) ID: {session_id}") # Cambiado log a sesión (cita)
+async def delete_appointment_record(appointment_id: str) -> Dict[str, Any]: 
+    logger.info(f"Eliminando cita (appointment) ID: {appointment_id}") 
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.query_table(TABLE_CITAS, lambda t: t.delete().eq('id', session_id), use_service_key=True, handle_error=False)
-        return await _handle_supabase_response(api_response, "delete_session", TABLE_CITAS)
-    except Exception as e: logger.error(f"Excepción en delete_session: {e}", exc_info=True); return {"success": False, "error": str(e)}
+        api_response = await supabase.query_table(TABLE_APPOINTMENTS, lambda t: t.delete().eq('id', appointment_id), use_service_key=True, handle_error=False)
+        return await _handle_supabase_response(api_response, "delete_appointment_record", TABLE_APPOINTMENTS)
+    except Exception as e: logger.error(f"Excepción en delete_appointment_record: {e}", exc_info=True); return {"success": False, "error": str(e)}
 
 
 # --- Funciones para Notifications ---
@@ -453,10 +466,10 @@ async def delete_expired_sessions(ttl_seconds: int) -> int:
 
 # --- Funciones para Appointments (Calendly/Zoom - tabla 'appointments') ---
 # Asumo que TABLE_APPOINTMENTS = "appointments" está definida
-TABLE_APPOINTMENTS = "appointments"
+# TABLE_APPOINTMENTS = "appointments" # ELIMINAR ESTA REDEFINICIÓN
 
 async def insert_appointment(appointment_data: Dict[str, Any]) -> Dict[str, Any]:
-    logger.info(f"Insertando/Actualizando cita (appointment): {appointment_data.get('calendly_event_uri')}")
+    logger.info(f"Insertando/Actualizando cita (appointment) vía Calendly/Zoom: {appointment_data.get('calendly_event_uri')}")
     if not appointment_data.get("calendly_event_uri"):
         return {"success": False, "id": None, "error": "Calendly event URI es requerido"}
     try:

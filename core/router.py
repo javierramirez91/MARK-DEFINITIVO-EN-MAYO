@@ -34,7 +34,7 @@ router.include_router(
 
 # Ruta de información de la API
 @router.get("/info")
-async def api_info():
+async def api_info() -> dict:
     """Devuelve información sobre la API"""
     return {
         "name": settings.APP_NAME,

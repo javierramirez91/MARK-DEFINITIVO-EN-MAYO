@@ -4,7 +4,7 @@ Garantiza que Mark responda siempre en el idioma adecuado.
 """
 import logging
 import re
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional
 import unicodedata
 
 # Importación condicional de langdetect
@@ -285,22 +285,4 @@ def detect_language(text: str, user_id: Optional[str] = None, session_data: Opti
     
     # Si todo falla, usar el idioma por defecto
     logger.warning(f"No se pudo detectar el idioma, usando idioma por defecto: {LanguageConfig.DEFAULT_LANGUAGE}")
-    return LanguageConfig.DEFAULT_LANGUAGE
-
-def get_language_name(language_code: str) -> str:
-    """
-    Devuelve el nombre del idioma a partir del código
-    
-    Args:
-        language_code: Código del idioma
-        
-    Returns:
-        Nombre del idioma
-    """
-    language_names = {
-        "es": "Español",
-        "ca": "Català",
-        "en": "English",
-        "ar": "العربية"
-    }
-    return language_names.get(language_code, "Unknown") 
+    return LanguageConfig.DEFAULT_LANGUAGE 

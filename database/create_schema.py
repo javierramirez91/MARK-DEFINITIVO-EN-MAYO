@@ -1,17 +1,17 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv # ELIMINADO
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 # Cargar variables de entorno
-load_dotenv()
+# load_dotenv() # ELIMINADO
 
 # Obtener credenciales de conexión
 db_host = os.getenv("DB_HOST", "db.vtfyydqigxiowkswgreu.supabase.co")
 db_port = os.getenv("DB_PORT", "5432")
 db_name = os.getenv("DB_NAME", "postgres")
 db_user = os.getenv("DB_USER", "postgres")
-db_password = os.getenv("DB_PASSWORD", "espanyol4A")
+db_password = os.getenv("DB_PASSWORD") # ELIMINADA CONTRASEÑA HARDCODEADA
 
 # SQL para la creación del esquema básico
 sql_create_schema = """
@@ -162,6 +162,10 @@ SET setting_value = EXCLUDED.setting_value,
 
 def create_schema():
     try:
+        if not db_password:
+            print("Error: La variable de entorno DB_PASSWORD no está configurada.")
+            return False
+            
         print(f"Conectando a Supabase en {db_host}:{db_port} como {db_user}...")
         conn = psycopg2.connect(
             host=db_host,

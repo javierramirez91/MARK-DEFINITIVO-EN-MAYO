@@ -2,18 +2,18 @@
 Servicio de WhatsApp para el asistente Mark utilizando la API de Meta (WABA).
 Proporciona funciones para enviar mensajes y procesar webhooks entrantes de Meta.
 """
-# import logging # No usado
+# logging es importado como logger desde core.config más abajo
 import json
 import hmac
 import hashlib
 import httpx
-# import asyncio # No usado
-from typing import Dict, Any, Optional, Tuple # List, Tuple eliminadas
-import os
-import requests
-import logging
-from dotenv import load_dotenv
-from functools import lru_cache
+import asyncio # Necesario para asyncio.create_task
+from typing import Dict, Any, Optional, Tuple # Eliminado List
+# import os # Eliminado
+# import requests # Eliminado
+# import logging # ELIMINADO
+# from dotenv import load_dotenv # ELIMINADO
+# from functools import lru_cache # Eliminado
 
 # Importar configuración necesaria
 # from core.config import ApiConfig, logger, settings # ApiConfig no usada

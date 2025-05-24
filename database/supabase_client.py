@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv # ELIMINADO
 from supabase import create_client
 from postgrest.exceptions import APIError
 import logging
@@ -7,11 +7,11 @@ import asyncio
 from functools import wraps
 
 # Configurar logging
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO) # COMENTADO - Debería configurarse centralmente
 logger = logging.getLogger("supabase_client")
 
 # Cargar variables de entorno
-load_dotenv()
+# load_dotenv() # ELIMINADO
 
 # Decorador para reintentos asíncrono
 def with_retry(max_retries=3, retry_delay=2, retry_errors=None):
@@ -87,7 +87,7 @@ class SupabaseClient:
         if not self._initialized:
             async with self._lock:
                 if not self._initialized:
-                    load_dotenv()
+                    # load_dotenv() # ELIMINADO
 
                     self.is_production = os.getenv("ENVIRONMENT") == "production" or "RENDER" in os.environ
                     logger.info(f"Inicializando cliente Supabase en entorno: {'producción' if self.is_production else 'desarrollo'}")
@@ -235,15 +235,19 @@ class SupabaseClient:
                 if asyncio.iscoroutinefunction(query_fn):
                     result = await query_fn(table)
                 else:
-                    logger.warning("query_fn no es una corutina. Esperando una función async que llame a .execute()")
+                    logger.warning("query_fn no es una corutina. Ejecutando .execute() en un hilo separado.")
                     query_builder = query_fn(table)
                     if hasattr(query_builder, 'execute'):
-                        result = query_builder.execute()
+                        # Ejecutar la llamada síncrona en un hilo separado
+                        loop = asyncio.get_running_loop()
+                        result = await loop.run_in_executor(None, query_builder.execute)
                     else:
-                        raise TypeError("query_fn debe ser una función async que llame a .execute() o devolver un query builder")
+                        raise TypeError("query_fn debe devolver un query builder con método .execute() o ser una corutina que llame a .execute()")
 
             else:
-                result = table.select("*").execute()
+                # Si no hay query_fn, seleccionar todo (esto también es síncrono)
+                loop = asyncio.get_running_loop()
+                result = await loop.run_in_executor(None, table.select("*").execute)
 
             if self.is_production and hasattr(result, 'data'):
                 logger.info(f"Consulta async a tabla '{table_name}' completada: {len(result.data)} registros")

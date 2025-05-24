@@ -2,11 +2,10 @@
 Servicio de integración con Stripe para gestión de pagos.
 Permite generar enlaces de pago, verificar pagos y gestionar recursos.
 """
-# import logging # No usado
+# logging es importado como logger desde core.config más abajo
 # import json # No usado
 import asyncio # Importar asyncio
-# from typing import Dict, List, Optional, Any # List, Any no usadas
-from typing import Dict, Optional # List, Any eliminadas
+from typing import Dict, List, Optional, Any # Restaurado List, Any
 from datetime import datetime
 
 import stripe

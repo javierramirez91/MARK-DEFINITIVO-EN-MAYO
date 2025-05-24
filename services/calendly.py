@@ -3,12 +3,11 @@ Servicio de integración con Calendly para gestión de citas.
 Permite obtener horarios disponibles y programar citas.
 """
 import logging
-import json
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import httpx
 
-from core.config import ApiConfig
+from core.config import settings
 
 logger = logging.getLogger("mark-assistant.calendly")
 
@@ -21,7 +20,7 @@ def get_headers() -> Dict[str, str]:
         Diccionario con cabeceras API
     """
     return {
-        "Authorization": f"Bearer {ApiConfig.CALENDLY_API_KEY}",
+        "Authorization": f"Bearer {settings.CALENDLY_API_KEY}",
         "Content-Type": "application/json"
     }
 
@@ -35,7 +34,7 @@ async def get_user_info() -> Dict[str, Any]:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{ApiConfig.CALENDLY_API_URL}/users/me",
+                f"{settings.CALENDLY_API_URL}/users/me",
                 headers=get_headers(),
                 timeout=30
             )
@@ -60,7 +59,7 @@ async def get_user_event_types(user_uri: str) -> List[Dict[str, Any]]:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{ApiConfig.CALENDLY_API_URL}/event_types",
+                f"{settings.CALENDLY_API_URL}/event_types",
                 params={"user": user_uri},
                 headers=get_headers(),
                 timeout=30
@@ -74,7 +73,7 @@ async def get_user_event_types(user_uri: str) -> List[Dict[str, Any]]:
         logger.error(f"Error al obtener tipos de eventos: {e}")
         return []
 
-async def get_available_slots(
+async def _fetch_calendly_slots_for_event_type(
     event_type_uri: str,
     start_time: str,
     end_time: str,
@@ -95,7 +94,7 @@ async def get_available_slots(
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{ApiConfig.CALENDLY_API_URL}/event_type_available_times",
+                f"{settings.CALENDLY_API_URL}/event_type_available_times",
                 params={
                     "event_type": event_type_uri,
                     "start_time": start_time,
@@ -160,7 +159,7 @@ async def schedule_event(
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{ApiConfig.CALENDLY_API_URL}/scheduling_invitees",
+                f"{settings.CALENDLY_API_URL}/scheduling_invitees",
                 json=payload,
                 headers=get_headers(),
                 timeout=30
@@ -191,7 +190,7 @@ async def cancel_event(event_uri: str, reason: Optional[str] = None) -> bool:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                f"{ApiConfig.CALENDLY_API_URL}/scheduling_cancellations",
+                f"{settings.CALENDLY_API_URL}/scheduling_cancellations",
                 json={"event": event_uri, **payload},
                 headers=get_headers(),
                 timeout=30
@@ -217,7 +216,7 @@ async def get_event(event_uri: str) -> Dict[str, Any]:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{ApiConfig.CALENDLY_API_URL}/events/{event_uri}",
+                f"{settings.CALENDLY_API_URL}/events/{event_uri}",
                 headers=get_headers(),
                 timeout=30
             )
@@ -242,7 +241,7 @@ async def get_invitee(invitee_uri: str) -> Dict[str, Any]:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
-                f"{ApiConfig.CALENDLY_API_URL}/invitees/{invitee_uri}",
+                f"{settings.CALENDLY_API_URL}/invitees/{invitee_uri}",
                 headers=get_headers(),
                 timeout=30
             )
@@ -255,7 +254,7 @@ async def get_invitee(invitee_uri: str) -> Dict[str, Any]:
         return {}
 
 # Funciones de utilidad para la interfaz del asistente Mark
-def get_available_slots(
+async def get_available_slots(
     start_date: str,
     end_date: str,
     therapist_id: Optional[str] = None
@@ -289,14 +288,9 @@ def get_available_slots(
     start_time = start.isoformat() + "Z"  # UTC
     end_time = end.isoformat() + "Z"      # UTC
     
-    # Crear un bucle para ejecutar la solicitud async
-    import asyncio
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
     try:
         # Obtener información del usuario
-        user_info = loop.run_until_complete(get_user_info())
+        user_info = await get_user_info()
         user_uri = user_info.get("resource", {}).get("uri", "")
         
         if not user_uri:
@@ -304,7 +298,7 @@ def get_available_slots(
             return []
         
         # Obtener tipos de eventos
-        event_types = loop.run_until_complete(get_user_event_types(user_uri))
+        event_types = await get_user_event_types(user_uri)
         
         if not event_types:
             logger.error("No se encontraron tipos de eventos")
@@ -317,106 +311,80 @@ def get_available_slots(
         # Obtener slots disponibles para cada tipo de evento
         all_slots = []
         for event_type in event_types:
-            event_type_uri = event_type["uri"]
-            slots = loop.run_until_complete(
-                get_available_slots(event_type_uri, start_time, end_time)
-            )
+            if not event_type.get("active"):
+                continue
             
-            # Formatear slots
+            event_type_uri = event_type["uri"]
+            slots = await _fetch_calendly_slots_for_event_type(event_type_uri, start_time, end_time)
+            
+            # Formatear y añadir slots
             for slot in slots:
                 all_slots.append({
-                    "slot_id": slot.get("id", ""),
-                    "start_time": slot.get("start_time", ""),
-                    "end_time": slot.get("end_time", ""),
-                    "event_type": event_type.get("name", ""),
-                    "therapist_id": event_type.get("owner", "").split("/")[-1],
-                    "date": datetime.fromisoformat(slot.get("start_time", "").replace("Z", "+00:00")).strftime("%Y-%m-%d"),
-                    "time": datetime.fromisoformat(slot.get("start_time", "").replace("Z", "+00:00")).strftime("%H:%M")
+                    "start_time": slot.get("start_time"),
+                    "end_time": slot.get("end_time"),
+                    "therapist_name": event_type.get("name"),
+                    "event_type_uri": event_type_uri
                 })
-        
-        # Ordenar por fecha y hora
-        all_slots.sort(key=lambda x: x["start_time"])
         
         return all_slots
     
-    finally:
-        loop.close()
+    except Exception as e:
+        logger.error(f"Error al obtener slots disponibles (Mark): {e}")
+        return []
 
-def schedule_appointment(
+async def schedule_appointment(
     slot_id: str,
+    event_type_uri: str,
     patient_name: str,
     patient_email: str,
     patient_phone: Optional[str] = None,
     appointment_type: str = "initial",
-    format: str = "online"
+    meeting_format: str = "online",
+    questions_answers: Optional[List[Dict[str, str]]] = None
 ) -> Dict[str, Any]:
     """
-    Programa una cita utilizando un slot disponible
+    Programa una cita usando la API de Calendly.
     
     Args:
-        slot_id: ID del slot
-        patient_name: Nombre del paciente
-        patient_email: Email del paciente
-        patient_phone: Teléfono del paciente (opcional)
-        appointment_type: Tipo de cita ("initial", "followup", etc.)
-        format: Formato de la cita ("online", "presencial")
-    
+        slot_id: Hora de inicio del slot seleccionado (ISO 8601).
+        event_type_uri: URI del tipo de evento de Calendly.
+        patient_name: Nombre del paciente.
+        patient_email: Email del paciente.
+        patient_phone: Teléfono del paciente (opcional).
+        appointment_type: Tipo de cita (ej: 'initial', 'follow-up') - no usado por Calendly directamente.
+        meeting_format: Formato de la cita (ej: 'online', 'in-person') - no usado por Calendly directamente.
+        questions_answers: Respuestas a preguntas personalizadas.
+        
     Returns:
-        Información de la cita programada
+        Respuesta de la API de Calendly o diccionario de error.
     """
-    # Crear un bucle para ejecutar la solicitud async
-    import asyncio
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
     try:
-        # Extraer información del slot
-        event_type_uri = slot_id.split("_")[0]
-        start_time = slot_id.split("_")[1]
-        
-        # Preparar respuestas a preguntas personalizadas
-        questions = [
-            {
-                "question": "Tipo de cita",
-                "answer": appointment_type
-            },
-            {
-                "question": "Formato de la sesión",
-                "answer": format
-            }
-        ]
-        
-        # Programar cita
-        result = loop.run_until_complete(
-            schedule_event(
-                event_type_uri=event_type_uri,
-                start_time=start_time,
-                name=patient_name,
-                email=patient_email,
-                phone=patient_phone,
-                questions_answers=questions
-            )
+        # El 'slot_id' aquí es el 'start_time' que necesita 'schedule_event'
+        # 'name' y 'email' son 'patient_name' y 'patient_email'
+        # 'event_type_uri' se pasa directamente
+        response = await schedule_event(
+            event_type_uri=event_type_uri,
+            start_time=slot_id,
+            name=patient_name,
+            email=patient_email,
+            phone=patient_phone,
+            questions_answers=questions_answers
         )
         
-        if "error" in result:
-            logger.error(f"Error al programar cita: {result['error']}")
-            return {"error": result["error"]}
+        if "error" in response:
+            logger.error(f"Error devuelto por Calendly al programar: {response['error']}")
+        elif response.get("resource", {}).get("uri"):
+            logger.info(f"Cita programada exitosamente: {response['resource']['uri']}")
+        else:
+            logger.warning(f"Respuesta inesperada de Calendly al programar: {response}")
+            
+        return response
         
-        # Formatear respuesta
-        event_uri = result.get("event", "")
-        event_info = loop.run_until_complete(get_event(event_uri))
-        
-        return {
-            "appointment_id": result.get("id", ""),
-            "event_uri": event_uri,
-            "date": datetime.fromisoformat(start_time.replace("Z", "+00:00")).strftime("%Y-%m-%d"),
-            "time": datetime.fromisoformat(start_time.replace("Z", "+00:00")).strftime("%H:%M"),
-            "therapist_id": event_info.get("resource", {}).get("owner", "").split("/")[-1],
-            "type": appointment_type,
-            "format": format,
-            "join_url": result.get("join_url", ""),
-            "cancellation_url": result.get("cancellation_url", "")
-        }
-    
-    finally:
-        loop.close() 
+    except Exception as e:
+        logger.error(f"Error al programar cita (Mark): {e}")
+        return {"error": str(e), "details": "Error interno del asistente"}
+
+# TODO: Revisar si hay más funciones que necesiten ser async o si 'json' se usa.
+# TODO: Considerar si 'get_available_slots_for_day' y otras son necesarias o redundantes.
+
+# (El resto del archivo, si existe, no fue modificado) 

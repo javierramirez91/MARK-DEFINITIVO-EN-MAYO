@@ -4,19 +4,16 @@ from sqlalchemy.pool import NullPool
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declared_attr
 from contextlib import contextmanager
-from dotenv import load_dotenv
 import os
 import logging
 import time
 import socket
 from urllib.parse import quote_plus
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import ForeignKey
 
 # Configurar logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sqlalchemy_client")
-
-# Cargar variables de entorno
-load_dotenv()
 
 # Base declarativa para modelos
 Base = declarative_base()
@@ -78,7 +75,7 @@ class SupabaseAlchemyClient:
                     if pooler_type == 'transaction':
                         # Transaction Pooler (puerto 6543)
                         user = os.getenv("DB_POOLER_USER", f"postgres.{os.getenv('SUPABASE_PROJECT_ID', 'vtfyydqigxiowkswgreu')}")
-                        password = os.getenv("DB_POOLER_PASSWORD", os.getenv("DB_PASSWORD", "espanyol4A"))
+                        password = os.getenv("DB_POOLER_PASSWORD", os.getenv("DB_PASSWORD"))
                         host = os.getenv("DB_POOLER_HOST", "aws-0-eu-central-1.pooler.supabase.com")
                         port = os.getenv("DB_POOLER_PORT", "6543")
                         dbname = os.getenv("DB_NAME", "postgres")
@@ -86,7 +83,7 @@ class SupabaseAlchemyClient:
                     else:
                         # Session Pooler (puerto 5432 en pooler subdomain)
                         user = os.getenv("DB_POOLER_USER", f"postgres.{os.getenv('SUPABASE_PROJECT_ID', 'vtfyydqigxiowkswgreu')}")
-                        password = os.getenv("DB_POOLER_PASSWORD", os.getenv("DB_PASSWORD", "espanyol4A"))
+                        password = os.getenv("DB_POOLER_PASSWORD", os.getenv("DB_PASSWORD"))
                         host = os.getenv("DB_POOLER_HOST", "aws-0-eu-central-1.pooler.supabase.com")
                         port = "5432"
                         dbname = os.getenv("DB_NAME", "postgres")
@@ -94,13 +91,15 @@ class SupabaseAlchemyClient:
                 else:
                     # Conexión directa (no pooler)
                     user = os.getenv("DB_USER", "postgres")
-                    password = os.getenv("DB_PASSWORD", "espanyol4A")
+                    password = os.getenv("DB_PASSWORD")
                     host = os.getenv("DB_HOST", f"db.{os.getenv('SUPABASE_PROJECT_ID', 'vtfyydqigxiowkswgreu')}.supabase.co")
                     port = os.getenv("DB_PORT", "5432")
                     dbname = os.getenv("DB_NAME", "postgres")
                     logger.info("Usando conexión directa a Supabase")
                 
                 # Escapar cualquier carácter especial en la contraseña
+                if not password:
+                    raise ValueError("La contraseña de la base de datos (DB_PASSWORD o DB_POOLER_PASSWORD) no está configurada.")
                 escaped_password = quote_plus(password)
                 
                 # Construir la URL de conexión
@@ -300,13 +299,16 @@ class Todo(Base):
     """Modelo para la tabla todos."""
     __tablename__ = 'todos'
     
-    id = Column(Integer, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()"))
     title = Column(String, nullable=False)
     description = Column(String)
     is_complete = Column(Boolean, default=False)
-    user_id = Column(String)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('auth.users.id'))
     created_at = Column(DateTime, server_default=text('NOW()'))
-    updated_at = Column(DateTime, server_default=text('NOW()'))
+    updated_at = Column(DateTime, server_default=text('NOW()'), onupdate=text('NOW()'))
+
+    def __repr__(self):
+        return f"<Todo(id={self.id}, title={self.title}, is_complete={self.is_complete})>"
 
 # Ejemplo de uso
 if __name__ == "__main__":

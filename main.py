@@ -9,13 +9,15 @@ from dotenv import load_dotenv
 load_dotenv() # Carga las variables desde .env al entorno del proceso
 # ---------------------------------------------- #
 
+import json
+from datetime import datetime
 # import os # No usado
 # import logging # No usado
 import asyncio
-import threading
+# import threading # ELIMINADO
 # from typing import Dict, List, Any, Optional # No usados directamente
 from pathlib import Path
-# from datetime import datetime, timedelta # No usado
+# from datetime import timedelta # No usado
 
 import uvicorn
 from fastapi import FastAPI # , Request, Depends, HTTPException, BackgroundTasks # No usados directamente
@@ -27,7 +29,7 @@ from core.config import settings, logger, verify_config
 from database.d1_client import get_pending_notifications, update_notification_status
 from services.whatsapp import send_whatsapp_message
 from backend.api_server import apirouter
-from admin.admin_panel import run_admin_panel
+# from admin.admin_panel import run_admin_panel # ELIMINADO
 
 # Configurar la aplicación FastAPI
 app = FastAPI(
@@ -54,7 +56,7 @@ if static_dir.exists() and static_dir.is_dir():
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Tarea en segundo plano para procesar notificaciones pendientes
-async def process_pending_notifications():
+async def process_pending_notifications() -> None:
     """
     Procesa las notificaciones pendientes y envía mensajes de WhatsApp
     """
@@ -76,7 +78,7 @@ async def process_pending_notifications():
         # Procesar cada notificación
         for notification in notifications:
             notification_id = notification.get("id")
-            patient_id = notification.get("patient_id")
+            # patient_id = notification.get("patient_id") # ELIMINADO (no usado)
             message = notification.get("message")
             channel = notification.get("channel")
             
@@ -136,7 +138,7 @@ async def process_pending_notifications():
 
 # Eventos de inicio y cierre de la aplicación
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """
     Evento de inicio de la aplicación
     """
@@ -162,14 +164,14 @@ async def startup_event():
     logger.info("Asistente Mark iniciado correctamente")
 
 @app.on_event("shutdown")
-async def shutdown_event():
+async def shutdown_event() -> None:
     """
     Evento de cierre de la aplicación
     """
     logger.info("Asistente Mark detenido")
 
 # Tarea periódica para procesar notificaciones
-async def periodic_notification_processor():
+async def periodic_notification_processor() -> None:
     """
     Ejecuta el procesador de notificaciones periódicamente
     """
@@ -184,7 +186,7 @@ async def periodic_notification_processor():
 
 # Endpoint de salud
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict:
     """
     Endpoint para verificar el estado de la aplicación
     """

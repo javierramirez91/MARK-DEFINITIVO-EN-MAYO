@@ -5,11 +5,9 @@ Permite recibir mensajes de audio y generar respuestas de voz.
 import logging
 import os
 import tempfile
-from typing import Dict, Optional, Tuple, Any
+from typing import Dict, Optional, Any
 
 import aiofiles
-import aiohttp
-import asyncio
 from fastapi import UploadFile
 from pydub import AudioSegment
 
