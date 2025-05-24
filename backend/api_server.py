@@ -395,8 +395,9 @@ async def api_update_patient(
     update_payload: PatientUpdatePayload
 ):
     """Actualiza la información de un paciente existente."""
-    # Convertir el payload Pydantic a un dict, excluyendo los valores None
-    update_data = update_payload.model_dump(exclude_unset=True)
+    # Convertir el payload a un diccionario, excluyendo campos no seteados
+    # para permitir actualizaciones parciales.
+    update_data = update_payload.dict(exclude_unset=True)
     
     if not update_data:
         raise HTTPException(

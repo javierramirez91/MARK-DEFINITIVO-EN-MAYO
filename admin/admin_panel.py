@@ -269,7 +269,7 @@ class UserInDBBase(UserBase):
     updated_at: datetime
 
     class Config:
-        from_attributes = True # Compatible con ORMs si se usa, actualizado de orm_mode
+        orm_mode = True # Compatible con ORMs si se usa, actualizado de orm_mode
         # Permitir conversión de string ISO a datetime
         json_encoders = { datetime: lambda dt: dt.isoformat() }
 

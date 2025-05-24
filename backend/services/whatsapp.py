@@ -17,7 +17,7 @@ from twilio.rest import Client
 from twilio.request_validator import RequestValidator
 from pydantic import BaseModel
 
-from core.config import ApiConfig, VIRTUAL_ASSISTANT_NAME, VIRTUAL_ASSISTANT_NUMBER
+from core.config import settings, VIRTUAL_ASSISTANT_NAME, VIRTUAL_ASSISTANT_NUMBER
 from ai.language_detection import detect_language
 from ai.claude.client import handle_conversation
 from ai.hume.voice_handler import process_voice_message
@@ -27,11 +27,11 @@ logger = logging.getLogger("mark-assistant.whatsapp")
 
 # Inicializar cliente de Twilio si las credenciales están disponibles
 twilio_client = None
-if ApiConfig.TWILIO_ACCOUNT_SID and ApiConfig.TWILIO_AUTH_TOKEN:
+if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
     try:
         twilio_client = Client(
-            ApiConfig.TWILIO_ACCOUNT_SID,
-            ApiConfig.TWILIO_AUTH_TOKEN
+            settings.TWILIO_ACCOUNT_SID,
+            settings.TWILIO_AUTH_TOKEN
         )
         logger.info("Cliente Twilio inicializado correctamente")
     except Exception as e:
@@ -59,11 +59,11 @@ def verify_twilio_signature(signature: str, request_url: str, request_body: Dict
     Returns:
         True si la firma es válida, False en caso contrario
     """
-    if not ApiConfig.TWILIO_AUTH_TOKEN:
+    if not settings.TWILIO_AUTH_TOKEN:
         logger.warning("No se puede verificar la firma de Twilio: auth token no configurado")
         return False
     
-    validator = RequestValidator(ApiConfig.TWILIO_AUTH_TOKEN)
+    validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
     return validator.validate(request_url, request_body, signature)
 
 async def send_whatsapp_message(
@@ -138,7 +138,7 @@ async def download_media(media_url: str) -> Optional[bytes]:
         Contenido como bytes o None si hay error
     """
     # Twilio requiere autenticación para descargar medios
-    auth = (ApiConfig.TWILIO_ACCOUNT_SID, ApiConfig.TWILIO_AUTH_TOKEN)
+    auth = (settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     
     try:
         async with httpx.AsyncClient() as client:
