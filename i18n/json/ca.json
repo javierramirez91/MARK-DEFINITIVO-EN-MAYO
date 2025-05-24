@@ -1,0 +1,88 @@
+{
+  "welcome": {
+    "greeting": "Hola! Sóc Mark, l'assistent del Centre de Psicologia Jaume I. En què puc ajudar-te avui? 😊",
+    "returning": "Benvingut de nou! En què puc ajudar-te avui? 😊"
+  },
+  "intake": {
+    "welcome": "Hola, sóc {assistant_name}, l'assistent del Centre de Psicologia Jaume I. T'ajudaré amb el procés inicial per començar teràpia. 😊",
+    "collect_personal": "Per començar, necessito algunes dades per conèixer millor les teves necessitats i oferir-te una atenció personalitzada i confidencial. 📋 Si us plau, facilita'm aquesta informació:\n\n1️⃣ Nom i cognoms\n2️⃣ Telèfon\n3️⃣ Correu electrònic\n4️⃣ Disponibilitat: Matins / Tardes / Indiferent\n5️⃣ Idioma de preferència: Català, Castellà, Anglès, Àrab\n6️⃣ Motiu de consulta: Què t'agradaria treballar o millorar a teràpia?\n7️⃣ Motivació: Què esperes obtenir de la teràpia? En què creus que et pot ajudar la teràpia?\n8️⃣ Dubtes o preocupacions respecte a l'inici de la teràpia?",
+    "missing_fields": "Encara necessito una mica més d'informació. Si us plau, proporciona les següents dades: {fields}",
+    "personal_info_confirmation": "Perfecte! He registrat les teves dades:\n\n- Nom: {name}\n- Telèfon: {phone}\n- Email: {email}\n- Motiu de consulta: {reason}\n\nAra identificarem quin tipus de teràpia podria ser més adequada per a tu.",
+    "specialty_identified": "Segons el teu motiu de consulta, crec que l'especialitat en {specialty} podria ser la més adequada per a tu.",
+    "no_specialist": "En aquest moment no tenim un especialista disponible en {specialty}, però comptem amb terapeutes amb experiència en diverses àrees que poden ajudar-te.",
+    "session_format": "Prefereixes que les sessions siguin presencials a la nostra consulta o en format online?",
+    "clarify_format": "No m'ha quedat clar la teva preferència. Podries indicar-me si prefereixes les sessions online (per videotrucada) o presencials (a la nostra consulta)?",
+    "format_confirmation": "Entès! Has triat format {format} per a les teves sessions.",
+    "scheduling_info": "A continuació, programarem una primera trucada gratuïta per resoldre qualsevol dubte que tinguis i buscar al terapeuta que millor s'adapti a les teves necessitats.",
+    "completion": "Gràcies per proporcionar tota aquesta informació. En breu em posaré en contacte amb tu per confirmar la data i hora de la teva primera trucada gratuïta. Si tens qualsevol dubte mentrestant, no dubtis en preguntar-me. 😊"
+  },
+  "scheduling": {
+    "available_slots": "Aquests són els horaris disponibles per a la teva primera cita:\n\n{slots}\n\nSi us plau, indica'm quina opció prefereixes.",
+    "confirmation": "Cita confirmada! T'esperem el {date} a les {time}. Rebràs un recordatori 48 hores abans.",
+    "reminder": "Et recordo que tens una cita programada per demà {date} a les {time}. Podràs assistir?",
+    "cancellation_policy": "Recorda que les cancel·lacions amb menys de 24 hores d'antelació tenen un càrrec de 30€.",
+    "reschedule_options": "Entenc que necessites canviar la teva cita. Aquestes són les opcions disponibles:\n\n{options}\n\nQuina prefereixes?"
+  },
+  "payments": {
+    "payment_link": "Per completar la reserva de la teva cita, pots realitzar el pagament aquí: {link} ✅",
+    "payment_confirmation": "Pagament rebut! La teva cita està confirmada.",
+    "payment_reminder": "Et recordo que encara està pendent el pagament de la teva sessió. Pots realitzar-lo aquí: {link}",
+    "receipt": "Adjunt trobaràs el rebut del teu pagament. Gràcies!"
+  },
+  "crisis": {
+    "initial_response": "Em sap molt greu que estiguis passant per això. Recorda que no estàs sol/a. Estem aquí per ajudar-te. Necessites parlar amb el teu professional de confiança?",
+    "emergency_notification": "D'acord, ja hem notificat a {emergency_contact} i el seu equip. Es posaran en contacte amb tu com més aviat millor.",
+    "resources": "Mentrestant, aquí tens algunes eines que poden ajudar-te:\n\n1️⃣ Respiració profunda: Inhala durant 4 segons, mantén 4 segons, exhala 4 segons.\n2️⃣ Mindfulness: Observa 5 coses que puguis veure, 4 que puguis tocar, 3 que puguis sentir, 2 que puguis olorar i 1 que puguis tastar.\n3️⃣ Contacta amb algú de confiança per parlar.",
+    "emergency_services": "Si necessites ajuda immediata, pots contactar amb els serveis d'emergència al 112 o amb el 024 (Servei d'Atenció a la Conducta Suïcida)."
+  },
+  "followup": {
+    "post_session": "Com t'has sentit després de la sessió d'avui? M'agradaria saber si hi ha alguna cosa que vulguis compartir o algun dubte que t'hagi sorgit.",
+    "feedback_request": "Ens agradaria conèixer la teva opinió sobre la teva experiència fins ara. Podries valorar de l'1 al 10 com t'estàs sentint amb la teràpia?",
+    "resources_offer": "El teu terapeuta ha recomanat alguns recursos que podrien ser-te útils. T'agradaria rebre'ls?"
+  },
+  "errors": {
+    "general": "Ho sento, ha ocorregut un error. Si us plau, intenta-ho de nou més tard.",
+    "processing_info": "Ho sento, hi ha hagut un problema en processar la teva informació. Podries intentar-ho de nou?",
+    "processing_specialty": "Hi ha hagut un problema en determinar l'especialitat adequada, però no et preocupis, seguirem amb el procés.",
+    "saving_patient": "Hi ha hagut un problema en guardar les teves dades, però no et preocupis, seguirem amb el procés. Si us plau, mantén una còpia de la informació que m'has proporcionat.",
+    "scheduling": "Ho sento, hi ha hagut un problema en programar la cita. Si us plau, intenta-ho de nou o contacta'ns per telèfon."
+  },
+  "security": {
+    "unauthorized": "Ho sento, només puc acceptar ordres de modificació del número autoritzat. Si ets {admin_name}, envia'm un missatge des del teu número personal ({admin_phone}).",
+    "confidentiality": "Ho sento, no puc proporcionar informació sobre altres pacients per raons de confidencialitat."
+  },
+  "fields": {
+    "name": "nom i cognoms",
+    "phone": "telèfon",
+    "email": "correu electrònic",
+    "availability": "disponibilitat",
+    "language_preference": "idioma preferit",
+    "consultation_reason": "motiu de consulta",
+    "expectations": "expectatives de la teràpia",
+    "concerns": "dubtes o preocupacions"
+  },
+  "specialties": {
+    "ansiedad": "ansietat",
+    "depresion": "depressió",
+    "trauma": "trauma",
+    "pareja": "teràpia de parella o familiar",
+    "adicciones": "addiccions",
+    "infantil": "psicologia infantil",
+    "adolescentes": "psicologia d'adolescents",
+    "general": "psicologia general"
+  },
+  "formats": {
+    "online": "online (videotrucada)",
+    "presencial": "presencial (a consulta)"
+  },
+  "confirmation": {
+    "yes": "sí",
+    "no": "no",
+    "maybe": "potser"
+  },
+  "fallback": {
+    "not_understood": "Ho sento, no he entès el teu missatge. Podries reformular-lo?",
+    "need_more_info": "Necessito una mica més d'informació per poder ajudar-te correctament.",
+    "suggest_options": "Puc ajudar-te amb:\n\n- Programar o modificar cites\n- Informació sobre tarifes i serveis\n- Resoldre dubtes sobre la teràpia\n- Contactar amb el teu terapeuta\n\nEn què et puc ajudar?"
+  }
+}

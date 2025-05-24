@@ -1,0 +1,38 @@
+# Configuración de Ruff para el proyecto Mark
+
+# Habilitar todas las reglas por defecto
+select = ["E", "F", "W", "I", "N", "UP", "ANN", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "TD", "FIX", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR", "PERF", "FURB", "LOG", "RUF"]
+
+# Ignorar algunas reglas específicas
+ignore = [
+    "ANN101",  # Missing type annotation for `self` in method
+    "ANN102",  # Missing type annotation for `cls` in classmethod
+    "E501",    # Line too long
+    "F403",    # `from module import *` used
+    "F405",    # Name may be undefined, or defined from star imports
+]
+
+# Configuración específica para ciertos directorios
+[per-file-ignores]
+"tests/*" = ["ANN", "S101", "PLR2004", "E501"]
+"ai/langgraph/*" = ["E501"]
+
+# Longitud máxima de línea
+line-length = 100
+
+# Versión de Python objetivo
+target-version = "py39"
+
+# Configuración para imports
+[isort]
+known-first-party = ["ai", "api", "core", "db", "services", "utils"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+# Configuración para anotaciones de tipo
+[lint.annotations]
+allow-star-arg-any = true
+suppress-none-returning = true
+
+# Configuración para docstrings
+[lint.pydocstyle]
+convention = "google" 

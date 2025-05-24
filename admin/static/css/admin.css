@@ -1,0 +1,186 @@
+/**
+ * Estilos para el panel de administración del asistente Mark
+ */
+
+:root {
+    --primary-color: #4a6baf;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+}
+
+/* Estilos generales */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Personalización de botones */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: #3a5a9f;
+    border-color: #3a5a9f;
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Personalización de tarjetas */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: bold;
+    padding: 15px 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Personalización de tablas */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: var(--secondary-color);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Personalización de formularios */
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(74, 107, 175, 0.25);
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.form-text {
+    color: var(--secondary-color);
+}
+
+/* Personalización de badges */
+.badge {
+    padding: 0.5em 0.8em;
+    font-weight: 500;
+}
+
+/* Personalización de alertas */
+.alert {
+    border-radius: 10px;
+}
+
+/* Animaciones */
+.fade-in {
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Estilos para estadísticas */
+.stats-card {
+    text-align: center;
+    padding: 20px;
+}
+
+.stats-card .icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.stats-card .number {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.stats-card .label {
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+}
+
+/* Estilos para encabezados de página */
+.page-header {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-header h1 {
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+/* Estilos para modales */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Estilos para tooltips */
+.tooltip {
+    font-size: 0.8rem;
+}
+
+/* Estilos para paginación */
+.pagination .page-link {
+    color: var(--primary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* Estilos para loader */
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+} 

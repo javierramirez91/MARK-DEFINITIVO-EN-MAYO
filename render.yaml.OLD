@@ -1,0 +1,203 @@
+# ============================================================
+# Render Blueprint for Mark Assistant - OPTIMIZED (Option 1)
+# ============================================================
+# This file defines the services and cron jobs for deployment.
+
+services:
+  # -------------------------------------------
+  # Main Web Service: mark-assistant (API Core)
+  # -------------------------------------------
+  - type: web
+    name: mark-assistant
+    env: python
+    region: frankfurt       # Ensure this is the desired region
+    plan: standard          # Plan required for primary functionality
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT --workers 2 # Adjust worker count based on load/plan
+    healthCheckPath: /health # Endpoint for health checks
+    autoDeploy: true         # Automatically deploy on push to main branch
+    envVars:
+      # --- General Settings ---
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: APP_URL # Ensure this matches the final Render URL
+        value: https://mark-assistant.onrender.com
+
+      # --- WhatsApp / Meta ---
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false # Set this secret in Render Dashboard
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false # Set this secret in Render Dashboard
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false # Set this secret in Render Dashboard
+      - key: WHATSAPP_APP_SECRET
+        sync: false # Set this secret in Render Dashboard
+
+      # --- AI / OpenRouter ---
+      - key: OPENROUTER_API_KEY
+        sync: false # Set this secret in Render Dashboard
+      - key: OPENROUTER_MODEL # Keep the specified free model
+        value: google/gemma-3-12b-it:free
+      - key: OPENROUTER_SITE_URL # Used for API context/referer
+        value: https://centrepsicologiajaumeprimer.com
+      - key: OPENROUTER_HTTP_REFERER # Used for API context/referer
+        value: https://centrepsicologiajaumeprimer.com
+
+      # --- Database / Supabase ---
+      - key: DATABASE_URL # Connection string (use Pooler URL from Supabase)
+        sync: false # Set this secret in Render Dashboard
+      - key: SUPABASE_URL # Supabase project URL
+        sync: false # Set this secret in Render Dashboard
+      - key: SUPABASE_KEY # Supabase anon key
+        sync: false # Set this secret in Render Dashboard
+      - key: SUPABASE_SERVICE_KEY # Supabase service role key
+        sync: false # Set this secret in Render Dashboard
+      # - PgBouncer settings (defaults usually fine, adjust if needed)
+      - key: PGBOUNCER_POOL_MODE
+        value: transaction
+      - key: PGBOUNCER_MAX_CLIENT_CONN
+        value: "100"
+      - key: PGBOUNCER_DEFAULT_POOL_SIZE
+        value: "25"
+      - key: PGSSLMODE # Important for secure connection
+        value: require
+
+      # --- Centre Configuration ---
+      - key: VIRTUAL_ASSISTANT_NAME
+        value: Mark
+      - key: EMERGENCY_CONTACT # WhatsApp number for alerts
+        sync: false # Set this secret in Render Dashboard
+      - key: EMERGENCY_CONTACT_NAME
+        value: Dina # Name associated with emergency contact
+      - key: CENTER_NAME
+        value: "Centre de Psicologia Jaume I"
+      - key: CENTER_ADDRESS
+        value: "Gran Via Jaume I, 41-43, Entresol 1a, 17001, Girona"
+      - key: CENTER_EMAIL
+        value: "info@centrepsicologiajaumeprimer.com"
+      - key: CENTER_WEBSITE
+        value: "https://centrepsicologiajaume1.com"
+
+      # --- LangSmith (Observability) ---
+      - key: LANGCHAIN_API_KEY
+        sync: false # Set this secret in Render Dashboard
+      - key: LANGCHAIN_PROJECT
+        value: "centro-psicologia-jaume-i" # Your LangSmith project name
+      - key: LANGCHAIN_ENDPOINT
+        value: "https://api.smith.langchain.com"
+      - key: LANGCHAIN_TRACING_V2
+        value: "true" # Enable LangSmith tracing
+
+      # --- Stripe (Payments) ---
+      - key: STRIPE_API_KEY
+        sync: false # Set this secret in Render Dashboard
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false # Set this secret in Render Dashboard
+      # - Stripe Price IDs (ensure these are correct for production)
+      - key: STRIPE_PRICE_ID_STANDARD
+        value: "price_1Ov4L3K8oZ75uUuMRLZG2SQr"
+      - key: STRIPE_PRICE_ID_REDUCIDA
+        value: "price_1Ov4KlK8oZ75uUuMAJg1k4yw"
+      - key: STRIPE_PRICE_ID_PAREJA
+        value: "price_1Ov4KPK8oZ75uUuMqgGzSxpD"
+
+      # --- Calendly (Scheduling) ---
+      - key: CALENDLY_API_KEY
+        sync: false # Set this secret in Render Dashboard
+      - key: CALENDLY_WEBHOOK_URL # URL for Calendly events
+        value: "https://mark-assistant.onrender.com/api/calendly/webhook" # Adjust if main service URL is different
+
+      # --- Security & JWT ---
+      - key: ENCRYPTION_KEY # For encrypting sensitive data at rest
+        sync: false # Set this secret in Render Dashboard
+      - key: SECRET_KEY # FastAPI secret key (used by Admin panel too)
+        sync: false # Set this secret in Render Dashboard
+      - key: JWT_SECRET # Secret for signing JWTs
+        sync: false # Set this secret in Render Dashboard
+
+    # --- Disk for Main Service ---
+    # Required for backups, temp files, etc. specified in cron jobs
+    disk:
+      name: mark-data       # Name of the persistent disk
+      mountPath: /data      # Where the disk is mounted in the container
+      sizeGB: 1             # Size as per requirement
+
+  # ------------------------------------------------
+  # Admin Panel Web Service: mark-admin-panel (Optimized)
+  # ------------------------------------------------
+  - type: web
+    name: mark-admin-panel
+    env: python
+    region: frankfurt       # Match region with main service if possible
+    plan: free              # OPTIMIZATION: Use free plan
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker admin.main:app --bind 0.0.0.0:$PORT --workers 1 # Recommend 1 worker on free plan
+    healthCheckPath: /admin/health # Health check specific to admin panel
+    autoDeploy: true
+    envVars:
+      # --- Admin Panel Specific Settings ---
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+
+      # --- Shared Secrets via fromService ---
+      - key: SECRET_KEY # Get from main service
+        fromService:
+          type: web
+          name: mark-assistant # Name of the source service
+          envVarKey: SECRET_KEY # Key to retrieve
+      - key: DATABASE_URL # Get from main service
+        fromService:
+          type: web
+          name: mark-assistant
+          envVarKey: DATABASE_URL
+
+      # --- Other Settings ---
+      - key: ALLOWED_HOSTS # Important for security, adjust if using custom domain
+        value: mark-admin-panel.onrender.com # Default Render URL for the service
+
+      # --- Admin Credentials (Secrets) ---
+      - key: ADMIN_USERNAME
+        sync: false # Set this secret in Render Dashboard
+      - key: ADMIN_PASSWORD
+        sync: false # Set this secret in Render Dashboard
+      - key: ADMIN_EMAIL
+        sync: false # Set this secret in Render Dashboard
+
+    # --- NO DISK ---
+    # Disk removed as per Option 1 optimization (ASSUMES admin code doesn't need it)
+
+# ============================================================
+# Cron Jobs (Scheduled Tasks)
+# ============================================================
+cron:
+  jobs:
+    # --- Backup Jobs ---
+    - schedule: "0 2 * * *" # Run daily at 2 AM UTC
+      command: "python -m scripts.backup_database --output /data/backups/database_$(date +%Y%m%d).bak"
+      serviceName: mark-assistant # Runs on the main service (needs disk at /data)
+    - schedule: "0 3 * * *" # Run daily at 3 AM UTC
+      command: "python -m scripts.backup_encryption_keys --output /data/backups/encryption_keys_$(date +%Y%m%d).zip"
+      serviceName: mark-assistant # Runs on the main service (needs disk at /data)
+
+    # --- Maintenance Jobs ---
+    - schedule: "0 4 * * *" # Run daily at 4 AM UTC
+      command: "python -m scripts.check_key_rotation"
+      serviceName: mark-assistant
+    - schedule: "0 5 * * *" # Run daily at 5 AM UTC
+      command: "python -m scripts.verify_security"
+      serviceName: mark-assistant
+    - schedule: "0 */6 * * *" # Run every 6 hours
+      command: "python -m scripts.clean_temp_files"
+      serviceName: mark-assistant # Runs on the main service (needs disk at /data)
+
+# ============================================================
+# End of Blueprint
+# ============================================================ 

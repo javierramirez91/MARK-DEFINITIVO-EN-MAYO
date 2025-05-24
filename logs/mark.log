@@ -1,0 +1,173 @@
+2025-03-01 20:22:33,540 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 20:23:42,832 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 20:25:03,856 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 20:25:03,886 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 20:25:03,949 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 20:25:03,954 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 20:25:03,960 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langsmith'
+2025-03-01 20:25:03,960 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 20:25:03,966 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 20:25:04,712 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 20:25:04,728 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 20:25:04,781 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 20:25:04,784 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 20:25:04,786 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langsmith'
+2025-03-01 20:25:04,786 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 20:25:04,788 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 20:25:04,871 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 20:30:48,058 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 20:30:48,074 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 20:30:48,147 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 20:30:48,149 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 20:30:48,616 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 20:30:48,616 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 20:30:48,618 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 20:30:49,306 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 20:30:49,322 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 20:30:49,380 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 20:30:49,381 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 20:30:49,794 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 20:30:49,794 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 20:30:49,796 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 20:30:49,867 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:12:15,977 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:12:15,977 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:12:15,993 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:12:15,993 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:12:16,084 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:12:16,085 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:12:16,087 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:12:16,665 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:12:16,666 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:12:16,666 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:12:16,667 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:12:16,669 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:12:16,669 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:12:16,781 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:12:16,783 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:12:57,803 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:12:57,804 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:12:57,818 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:12:57,819 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:12:57,887 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:12:57,888 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:12:57,889 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:12:57,890 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:12:58,344 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:12:58,344 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:12:58,344 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:12:58,345 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:12:58,346 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:12:58,346 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:12:58,414 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:12:58,414 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:14:24,343 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:14:24,402 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:14:24,463 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:14:24,470 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:14:24,472 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:14:24,480 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:14:24,549 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:14:24,551 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:14:24,932 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:14:24,932 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:14:24,934 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:14:24,987 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:14:24,988 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:14:24,990 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:14:25,005 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:14:25,058 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:15:38,738 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:15:38,754 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:15:38,818 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:15:38,820 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:15:38,870 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:15:38,886 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:15:38,948 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:15:38,950 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:15:39,333 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:15:39,334 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:15:39,336 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:15:39,405 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:15:39,448 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:15:39,449 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:15:39,451 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:15:39,518 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:16:33,130 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:16:33,136 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:16:33,146 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:16:33,152 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:16:33,212 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:16:33,214 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:16:33,215 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:16:33,217 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:16:33,677 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:16:33,678 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:16:33,678 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:16:33,678 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:16:33,680 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:16:33,680 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:16:33,749 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:16:33,749 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:17:14,918 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:17:14,922 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:17:14,935 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:17:14,938 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:17:14,996 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:17:14,997 - mark.claude - INFO - Cliente de Claude inicializado con modelo claude-3-7-sonnet-20250219
+2025-03-01 21:17:14,998 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:17:14,999 - mark.langgraph - INFO - Motor de conversación inicializado
+2025-03-01 21:17:15,459 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:17:15,459 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:17:15,461 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:17:15,479 - mark.langgraph - ERROR - Error al cargar componentes del motor de conversación: No module named 'langchain'
+2025-03-01 21:17:15,479 - mark.conversation - INFO - Componentes del servicio de conversación cargados correctamente
+2025-03-01 21:17:15,481 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:17:15,524 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:17:15,542 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:18:02,868 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:18:02,885 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:18:02,885 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:18:02,890 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:18:02,890 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:18:02,975 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:18:03,067 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:18:03,067 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:18:14,478 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:18:14,495 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:18:14,497 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:18:14,557 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:18:14,635 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:18:14,677 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:18:14,694 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:18:14,696 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:18:14,755 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:18:14,825 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:24:10,899 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:24:10,915 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:24:10,916 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:24:10,918 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:24:10,918 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:24:11,000 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:24:11,001 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:24:11,094 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:25:42,073 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:25:42,073 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:25:42,090 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:25:42,090 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:25:42,092 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:25:42,092 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:25:42,157 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:25:42,158 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:25:42,238 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:25:42,238 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:25:51,364 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:25:51,376 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:25:51,382 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:25:51,384 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:25:51,394 - mark.conversation - INFO - Servicio de conversación inicializado
+2025-03-01 21:25:51,396 - mark.conversation - ERROR - Error al cargar componentes del servicio de conversación: No module named 'anthropic'
+2025-03-01 21:25:51,454 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:25:51,460 - mark.hume - INFO - Cliente de Hume EVI inicializado con voz default
+2025-03-01 21:25:51,534 - mark - INFO - Iniciando Mark - Asistente Virtual
+2025-03-01 21:25:51,535 - mark - INFO - Iniciando Mark - Asistente Virtual

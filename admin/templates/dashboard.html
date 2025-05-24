@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <div>
+        <button id="refresh-dashboard" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+    </div>
+</div>
+
+<!-- Tarjetas de estadísticas -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body stats-card">
+                <div class="icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="number" id="total-patients">{{ stats.total_patients }}</div>
+                <div class="label">Pacientes Activos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body stats-card">
+                <div class="icon">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="number" id="sessions-today">{{ stats.sessions_today }}</div>
+                <div class="label">Sesiones Hoy</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body stats-card">
+                <div class="icon">
+                    <i class="bi bi-bell"></i>
+                </div>
+                <div class="number" id="pending-notifications">{{ stats.pending_notifications }}</div>
+                <div class="label">Notificaciones Pendientes</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body stats-card">
+                <div class="icon">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <div class="number" id="messages-today">{{ stats.messages_today }}</div>
+                <div class="label">Mensajes Hoy</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos y actividad reciente -->
+<div class="row mt-4">
+    <!-- Gráfico de actividad -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up"></i> Actividad Reciente
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="activityTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="sessions-tab" data-bs-toggle="tab" 
+                                data-bs-target="#sessions-chart" type="button" role="tab" 
+                                aria-controls="sessions-chart" aria-selected="true">Sesiones</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="messages-tab" data-bs-toggle="tab" 
+                                data-bs-target="#messages-chart" type="button" role="tab" 
+                                aria-controls="messages-chart" aria-selected="false">Mensajes</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="patients-tab" data-bs-toggle="tab" 
+                                data-bs-target="#patients-chart" type="button" role="tab" 
+                                aria-controls="patients-chart" aria-selected="false">Pacientes</button>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3" id="activityTabsContent">
+                    <div class="tab-pane fade show active" id="sessions-chart" role="tabpanel" aria-labelledby="sessions-tab">
+                        <canvas id="sessionsChart" height="250"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="messages-chart" role="tabpanel" aria-labelledby="messages-tab">
+                        <canvas id="messagesChart" height="250"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="patients-chart" role="tabpanel" aria-labelledby="patients-tab">
+                        <canvas id="patientsChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alertas y notificaciones del sistema -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-exclamation-triangle"></i> Alertas del Sistema
+            </div>
+            <div class="card-body">
+                {% if alerts %}
+                    <div class="list-group">
+                        {% for alert in alerts %}
+                            <div class="list-group-item list-group-item-action flex-column align-items-start">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ alert.title }}</h5>
+                                    <small class="text-muted">{{ alert.time }}</small>
+                                </div>
+                                <p class="mb-1">{{ alert.message }}</p>
+                                <small class="text-{{ alert.level }}">
+                                    <i class="bi bi-{{ alert.icon }}"></i> {{ alert.level_text }}
+                                </small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i> No hay alertas activas en este momento.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Próximas sesiones y notificaciones pendientes -->
+<div class="row mt-4">
+    <!-- Próximas sesiones -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-calendar-week"></i> Próximas Sesiones
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in upcoming_sessions %}
+                            <tr>
+                                <td>{{ session.patient_name }}</td>
+                                <td>{{ session.scheduled_at }}</td>
+                                <td>
+                                    {% if session.session_type == "individual" %}
+                                    <span class="badge bg-primary">Individual</span>
+                                    {% elif session.session_type == "couple" %}
+                                    <span class="badge bg-info">Pareja</span>
+                                    {% elif session.session_type == "family" %}
+                                    <span class="badge bg-warning">Familiar</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ session.session_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/sessions/{{ session.id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">No hay sesiones programadas próximamente</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="/sessions" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar"></i> Ver Todas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notificaciones pendientes -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bell"></i> Notificaciones Pendientes
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Mensaje</th>
+                                <th>Programada</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for notification in pending_notifications %}
+                            <tr>
+                                <td>{{ notification.patient_name }}</td>
+                                <td>{{ notification.message|truncate(30) }}</td>
+                                <td>{{ notification.scheduled_at }}</td>
+                                <td>
+                                    <a href="/notifications/{{ notification.id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">No hay notificaciones pendientes</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="/notifications" class="btn btn-outline-primary">
+                        <i class="bi bi-bell"></i> Ver Todas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configuración de colores
+        const primaryColor = '#4a6baf';
+        const secondaryColor = '#6c757d';
+        const successColor = '#28a745';
+        const dangerColor = '#dc3545';
+        const warningColor = '#ffc107';
+        const infoColor = '#17a2b8';
+        
+        // Función para cargar datos de estadísticas
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats/dashboard');
+                if (!response.ok) {
+                    throw new Error('Error al cargar estadísticas');
+                }
+                
+                const data = await response.json();
+                
+                // Actualizar números en tarjetas
+                document.getElementById('total-patients').textContent = data.total_patients;
+                document.getElementById('sessions-today').textContent = data.sessions_today;
+                document.getElementById('pending-notifications').textContent = data.pending_notifications;
+                document.getElementById('messages-today').textContent = data.messages_today;
+                
+                // Actualizar gráficos
+                updateSessionsChart(data.sessions_data);
+                updateMessagesChart(data.messages_data);
+                updatePatientsChart(data.patients_data);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error al cargar estadísticas: ' + error.message, 'danger');
+            }
+        }
+        
+        // Gráfico de sesiones
+        let sessionsChart;
+        function updateSessionsChart(data) {
+            const ctx = document.getElementById('sessionsChart').getContext('2d');
+            
+            // Destruir gráfico existente si hay uno
+            if (sessionsChart) {
+                sessionsChart.destroy();
+            }
+            
+            sessionsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Sesiones',
+                        data: data.values,
+                        backgroundColor: primaryColor,
+                        borderColor: primaryColor,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Gráfico de mensajes
+        let messagesChart;
+        function updateMessagesChart(data) {
+            const ctx = document.getElementById('messagesChart').getContext('2d');
+            
+            // Destruir gráfico existente si hay uno
+            if (messagesChart) {
+                messagesChart.destroy();
+            }
+            
+            messagesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Mensajes Recibidos',
+                        data: data.received,
+                        backgroundColor: 'rgba(74, 107, 175, 0.2)',
+                        borderColor: primaryColor,
+                        borderWidth: 2,
+                        tension: 0.4
+                    }, {
+                        label: 'Mensajes Enviados',
+                        data: data.sent,
+                        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                        borderColor: successColor,
+                        borderWidth: 2,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Gráfico de pacientes
+        let patientsChart;
+        function updatePatientsChart(data) {
+            const ctx = document.getElementById('patientsChart').getContext('2d');
+            
+            // Destruir gráfico existente si hay uno
+            if (patientsChart) {
+                patientsChart.destroy();
+            }
+            
+            patientsChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.values,
+                        backgroundColor: [
+                            primaryColor,
+                            successColor,
+                            warningColor,
+                            infoColor
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Cargar estadísticas iniciales
+        loadStats();
+        
+        // Configurar actualización periódica (cada 5 minutos)
+        setInterval(loadStats, 5 * 60 * 1000);
+        
+        // Configurar botón de actualización manual
+        document.getElementById('refresh-dashboard').addEventListener('click', function() {
+            loadStats();
+            showToast('Dashboard actualizado', 'success');
+        });
+    });
+</script>
+{% endblock %} 

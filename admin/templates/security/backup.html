@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Copias de Seguridad - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Gestión de Copias de Seguridad</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/security/data-protection">Protección de Datos</a></li>
+        <li class="breadcrumb-item active">Copias de Seguridad</li>
+    </ol>
+    
+    <!-- Tarjetas de estado -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Estado</div>
+                            <div class="fs-4">{{ backup_stats.status }}</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span class="small text-white">Sistema protegido</span>
+                    <div class="small text-white"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Última Copia</div>
+                            <div class="fs-5 timestamp">{{ backup_stats.last_backup }}</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-save fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span class="small text-white">Hace {{ backup_stats.days_since_last_backup }} días</span>
+                    <div class="small text-white"><i class="fas fa-info-circle"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Total Copias</div>
+                            <div class="fs-4">{{ backup_stats.total_backups }}</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-database fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span class="small text-white">Disponibles para restaurar</span>
+                    <div class="small text-white"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Espacio Utilizado</div>
+                            <div class="fs-4">{{ backup_stats.storage_used }}</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-hdd fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <span class="small text-white">{{ backup_stats.storage_percentage }}% del total</span>
+                    <div class="small text-white"><i class="fas fa-info-circle"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Sección de Crear Copia de Seguridad -->
+        <div class="col-xl-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-plus-circle me-1"></i>
+                    Crear Nueva Copia de Seguridad
+                </div>
+                <div class="card-body">
+                    <form action="/security/backup/create" method="post">
+                        <div class="mb-3">
+                            <label for="backupType" class="form-label">Tipo de Copia</label>
+                            <select class="form-select" id="backupType" name="backup_type" required>
+                                <option value="full">Completa (Base de datos + archivos)</option>
+                                <option value="db_only">Solo Base de Datos</option>
+                                <option value="config">Solo Configuración</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="includeFiles" name="include_files" checked>
+                                <label class="form-check-label" for="includeFiles">Incluir archivos adjuntos</label>
+                            </div>
+                            <div class="form-text">Incluye documentos, imágenes y otros archivos adjuntos.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="backupDescription" class="form-label">Descripción (opcional)</label>
+                            <textarea class="form-control" id="backupDescription" name="description" rows="2" placeholder="Descripción o propósito de esta copia de seguridad"></textarea>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            La creación de una copia de seguridad completa puede tardar varios minutos dependiendo del volumen de datos.
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Crear Copia de Seguridad
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-cog me-1"></i>
+                    Configuración de Copias
+                </div>
+                <div class="card-body">
+                    <form id="backupConfigForm">
+                        <div class="mb-3">
+                            <label for="autoBackup" class="form-label">Copias Automáticas</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="autoBackup" checked>
+                                <label class="form-check-label" for="autoBackup">Habilitar copias automáticas</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="backupFrequency" class="form-label">Frecuencia</label>
+                            <select class="form-select" id="backupFrequency">
+                                <option value="daily">Diaria</option>
+                                <option value="weekly" selected>Semanal</option>
+                                <option value="monthly">Mensual</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="retentionPeriod" class="form-label">Período de Retención</label>
+                            <select class="form-select" id="retentionPeriod">
+                                <option value="30">30 días</option>
+                                <option value="60">60 días</option>
+                                <option value="90" selected>90 días</option>
+                                <option value="180">180 días</option>
+                                <option value="365">1 año</option>
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-outline-primary" id="saveConfigBtn">
+                                <i class="fas fa-save me-1"></i> Guardar Configuración
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección de Historial de Copias -->
+        <div class="col-xl-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-history me-1"></i>
+                            Historial de Copias de Seguridad
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="refreshBtn">
+                                <i class="fas fa-sync-alt me-1"></i> Actualizar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Tamaño</th>
+                                    <th>Usuario</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for backup in backups %}
+                                <tr>
+                                    <td class="timestamp">{{ backup.created_at }}</td>
+                                    <td>
+                                        <span class="badge {% if backup.type == 'full' %}bg-primary{% elif backup.type == 'db_only' %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ backup.type_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ backup.size }}</td>
+                                    <td>{{ backup.created_by }}</td>
+                                    <td>
+                                        <span class="badge {% if backup.status == 'completed' %}bg-success{% elif backup.status == 'in_progress' %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ backup.status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary restore-btn" data-backup-id="{{ backup.id }}" {% if backup.status != 'completed' %}disabled{% endif %}>
+                                                <i class="fas fa-undo-alt"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary download-btn" data-backup-id="{{ backup.id }}" {% if backup.status != 'completed' %}disabled{% endif %}>
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger delete-btn" data-backup-id="{{ backup.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Paginación -->
+                    <nav aria-label="Paginación de copias de seguridad">
+                        <ul class="pagination justify-content-center mt-3">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Siguiente</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Sección de Restauración -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-undo-alt me-1"></i>
+                    Restauración y Recuperación
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Advertencia</h5>
+                        <p>La restauración de una copia de seguridad reemplazará todos los datos actuales con los datos de la copia seleccionada. Este proceso no se puede deshacer.</p>
+                        <hr>
+                        <p class="mb-0">Asegúrese de crear una copia de seguridad del estado actual antes de proceder con la restauración.</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Restauración Completa</h5>
+                                    <p>Restaura todos los datos y archivos a un punto anterior en el tiempo.</p>
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-primary" id="fullRestoreBtn">
+                                            <i class="fas fa-undo-alt me-1"></i> Restauración Completa
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Restauración Selectiva</h5>
+                                    <p>Restaura solo ciertos elementos o tablas específicas.</p>
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-secondary" id="selectiveRestoreBtn">
+                                            <i class="fas fa-tasks me-1"></i> Restauración Selectiva
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Restauración -->
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="restoreModalLabel">Restaurar Copia de Seguridad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>¡Atención!</strong> Esta acción reemplazará todos los datos actuales con los de la copia de seguridad seleccionada. Este proceso no se puede deshacer.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Copia de Seguridad Seleccionada</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <input type="text" class="form-control" id="selectedBackupDate" readonly>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="restoreOptions" class="form-label">Opciones de Restauración</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="restoreDatabase" checked>
+                        <label class="form-check-label" for="restoreDatabase">
+                            Restaurar base de datos
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="restoreFiles" checked>
+                        <label class="form-check-label" for="restoreFiles">
+                            Restaurar archivos adjuntos
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="restoreConfig" checked>
+                        <label class="form-check-label" for="restoreConfig">
+                            Restaurar configuración
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="confirmRestore" class="form-label">Confirmar Restauración</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Escriba "RESTAURAR"</span>
+                        <input type="text" class="form-control" id="confirmRestore" placeholder="RESTAURAR">
+                    </div>
+                    <div class="form-text">Para confirmar, escriba "RESTAURAR" en mayúsculas.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmRestoreBtn" disabled>Restaurar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatear fechas
+        document.querySelectorAll('.timestamp').forEach(function(el) {
+            const timestamp = new Date(el.textContent.trim());
+            el.textContent = timestamp.toLocaleString('es-ES');
+        });
+        
+        // Guardar configuración (simulado)
+        document.getElementById('saveConfigBtn').addEventListener('click', function() {
+            alert('La configuración se ha guardado correctamente. En una implementación real, esto actualizaría la configuración en la base de datos.');
+        });
+        
+        // Botones de restauración
+        document.querySelectorAll('.restore-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const backupId = this.getAttribute('data-backup-id');
+                const row = this.closest('tr');
+                const date = row.cells[0].textContent;
+                
+                document.getElementById('selectedBackupDate').value = date;
+                
+                const restoreModal = new bootstrap.Modal(document.getElementById('restoreModal'));
+                restoreModal.show();
+            });
+        });
+        
+        // Botones de descarga (simulado)
+        document.querySelectorAll('.download-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const backupId = this.getAttribute('data-backup-id');
+                alert(`En una implementación real, aquí se iniciaría la descarga de la copia de seguridad ID: ${backupId}`);
+            });
+        });
+        
+        // Botones de eliminación (simulado)
+        document.querySelectorAll('.delete-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const backupId = this.getAttribute('data-backup-id');
+                if (confirm('¿Está seguro de que desea eliminar esta copia de seguridad? Esta acción no se puede deshacer.')) {
+                    alert(`En una implementación real, aquí se eliminaría la copia de seguridad ID: ${backupId}`);
+                }
+            });
+        });
+        
+        // Validación para restauración
+        document.getElementById('confirmRestore').addEventListener('input', function() {
+            const confirmBtn = document.getElementById('confirmRestoreBtn');
+            confirmBtn.disabled = this.value !== 'RESTAURAR';
+        });
+        
+        // Confirmar restauración (simulado)
+        document.getElementById('confirmRestoreBtn').addEventListener('click', function() {
+            alert('En una implementación real, aquí comenzaría el proceso de restauración. Este proceso puede tardar varios minutos.');
+            const restoreModal = bootstrap.Modal.getInstance(document.getElementById('restoreModal'));
+            restoreModal.hide();
+        });
+        
+        // Botones de restauración completa y selectiva (simulados)
+        document.getElementById('fullRestoreBtn').addEventListener('click', function() {
+            alert('En una implementación real, aquí se mostraría un selector de copias de seguridad para restauración completa.');
+        });
+        
+        document.getElementById('selectiveRestoreBtn').addEventListener('click', function() {
+            alert('En una implementación real, aquí se mostraría una interfaz para seleccionar elementos específicos a restaurar.');
+        });
+        
+        // Botón de actualizar (simulado)
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            alert('Actualizando lista de copias de seguridad...');
+            // En una implementación real, aquí se recargaría la lista de copias
+            setTimeout(function() {
+                alert('Lista actualizada.');
+            }, 1000);
+        });
+    });
+</script>
+{% endblock %} 

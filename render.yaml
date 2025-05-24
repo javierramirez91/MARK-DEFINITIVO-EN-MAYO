@@ -1,0 +1,212 @@
+# Render Blueprint for Mark Assistant
+# This file defines the services to be deployed on Render
+
+services:
+  # Main web service for the Mark Assistant API
+  - type: web
+    name: mark-assistant
+    env: python
+    region: frankfurt  # Elige la región más cercana a tus usuarios
+    plan: standard     # Plan de Render apropiado según necesidades
+    buildCommand: pip install --upgrade pip && pip install -vvv -r requirements.txt
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT --workers 2
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: SECRET_KEY
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: ENCRYPTION_SALT
+        sync: false
+      - key: APP_URL
+        value: https://mark-assistant.onrender.com
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        sync: false
+      - key: OPENROUTER_TIMEOUT
+        value: "60.0"
+      - key: OPENROUTER_SITE_URL
+        value: https://centrepsicologiajaume1.com
+      - key: OPENROUTER_HTTP_REFERER
+        value: https://centrepsicologiajaume1.com
+
+      # Configuración de Supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: PGBOUNCER_POOL_MODE
+        value: transaction
+      - key: PGBOUNCER_MAX_CLIENT_CONN
+        value: "100"
+      - key: PGBOUNCER_DEFAULT_POOL_SIZE
+        value: "25"
+      - key: PGSSLMODE
+        value: require
+
+      # Configuración Centro
+      - key: VIRTUAL_ASSISTANT_NAME
+        value: Mark
+      - key: EMERGENCY_CONTACT
+        sync: false
+      - key: CENTER_NAME
+        value: "Centre de Psicologia Jaume I"
+      - key: CENTER_ADDRESS
+        value: "Gran Via Jaume I, 41-43, Entresol 1a, 17001, Girona"
+      - key: CENTER_EMAIL
+        value: "info@centrepsicologiajaumeprimer.com"
+      - key: CENTER_WEBSITE
+        value: "https://centrepsicologiajaume1.com"
+
+      # Stripe
+      - key: STRIPE_API_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ID_STANDARD
+        sync: false
+      - key: STRIPE_PRICE_ID_REDUCIDA
+        sync: false
+      - key: STRIPE_PRICE_ID_PAREJA
+        sync: false
+      - key: STRIPE_PRICE_ID_CANCELLATION
+        sync: false
+      - key: STRIPE_LINK_SUCCESS
+        value: "URL_DE_EXITO_AQUI"
+      - key: STRIPE_LINK_CANCEL
+        value: "URL_DE_CANCELACION_AQUI"
+      - key: CALENDLY_API_KEY
+        sync: false
+      - key: CALENDLY_USER_URI
+        sync: false
+      - key: CALENDLY_WEBHOOK_URL
+        value: "https://mark-assistant.onrender.com/api/calendly/webhook"
+
+      # Zoom Credentials (Server-to-Server OAuth)
+      - key: ZOOM_ACCOUNT_ID
+        sync: false
+      - key: ZOOM_S2S_CLIENT_ID
+        sync: false
+      - key: ZOOM_S2S_CLIENT_SECRET
+        sync: false
+
+      # Admin Panel Credentials (Hash se define en el panel admin)
+      - key: ADMIN_USERNAME
+        value: "admin"
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+      - key: JWT_ALGORITHM
+        value: "HS256"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
+    disk:
+      name: mark-data
+      mountPath: /data
+      sizeGB: 1
+    
+    # Scheduled jobs for maintenance tasks are moved to the top level 'cron' section
+    # The 'cron' key and its contents are removed from here
+
+  # Admin panel web service (optional)
+  - type: web
+    name: mark-admin-panel
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker admin.main:app --bind 0.0.0.0:$PORT --workers 1
+    healthCheckPath: /admin/health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: mark-assistant
+          envVarKey: SECRET_KEY
+      - key: ALLOWED_HOSTS
+        value: "mark-admin-panel.onrender.com"
+      - key: SUPABASE_URL
+        fromService:
+           type: web
+           name: mark-assistant
+           envVarKey: SUPABASE_URL
+      - key: SUPABASE_KEY
+        fromService:
+           type: web
+           name: mark-assistant
+           envVarKey: SUPABASE_KEY
+      - key: ADMIN_USERNAME
+        fromService:
+          type: web
+          name: mark-assistant
+          envVarKey: ADMIN_USERNAME
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+
+# Base de datos: Usamos Supabase PostgreSQL en lugar de Cloudflare D1
+# No es necesario configurar un servicio de base de datos adicional en Render
+# Las variables de conexión a Supabase ya están configuradas en las variables de entorno
+
+# Database service (optional - use if not using Cloudflare D1)
+#  - type: pserv
+#    name: mark-database
+#    env: docker
+#    region: frankfurt
+#    plan: standard
+#    image:
+#      url: postgres:14-alpine
+#    disk:
+#      name: mark-db-data
+#      mountPath: /var/lib/postgresql/data
+#      sizeGB: 10
+#    envVars:
+#      - key: POSTGRES_USER
+#        sync: false
+#      - key: POSTGRES_PASSWORD
+#        sync: false
+#      - key: POSTGRES_DB
+#        value: mark_assistant 
+
+# Temporarily commenting out the cron section to isolate the issue
+# Top-level Cron Jobs for maintenance
+# cron:
+#   jobs:
+#     - schedule: "0 2 * * *"  # Run daily at 2 AM
+#       command: "python -m scripts.backup_database --output /data/backups/database_$(date +%Y%m%d).bak"
+#       serviceName: mark-assistant  # Specify which service runs the command
+#     - schedule: "0 3 * * *"  # Run daily at 3 AM
+#       command: "python -m scripts.backup_encryption_keys --output /data/backups/encryption_keys_$(date +%Y%m%d).zip"
+#       serviceName: mark-assistant
+#     - schedule: "0 4 * * *"  # Run daily at 4 AM
+#       command: "python -m scripts.check_key_rotation"
+#       serviceName: mark-assistant
+#     - schedule: "0 5 * * *"  # Run daily at 5 AM
+#       command: "python -m scripts.verify_security"
+#       serviceName: mark-assistant
+#     - schedule: "0 */6 * * *"  # Run every 6 hours
+#       command: "python -m scripts.clean_temp_files"
+#       serviceName: mark-assistant 

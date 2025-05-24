@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}{{ patient.name }} - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>{{ patient.name }}</h1>
+    <div>
+        <a href="/patients/{{ patient.id }}/edit" class="btn btn-outline-primary me-2">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        <button type="button" class="btn btn-outline-danger" 
+                data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="bi bi-trash"></i> Eliminar
+        </button>
+    </div>
+</div>
+
+<!-- Modal de confirmación de eliminación -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar al paciente <strong>{{ patient.name }}</strong>?
+                <br><br>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Esta acción no se puede deshacer y eliminará todas las sesiones y notificaciones asociadas.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="/patients/{{ patient.id }}/delete" method="post">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información del paciente -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-person"></i> Información Personal
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Nombre</label>
+                    <div>{{ patient.name }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Teléfono</label>
+                    <div>
+                        <a href="tel:{{ patient.phone }}" class="text-decoration-none">
+                            {{ patient.phone }}
+                        </a>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Email</label>
+                    <div>
+                        {% if patient.metadata and patient.metadata.email %}
+                        <a href="mailto:{{ patient.metadata.email }}" class="text-decoration-none">
+                            {{ patient.metadata.email }}
+                        </a>
+                        {% else %}
+                        <span class="text-muted">No disponible</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Idioma</label>
+                    <div>
+                        {% if patient.language == "es" %}
+                        <span class="badge bg-info">Español</span>
+                        {% elif patient.language == "ca" %}
+                        <span class="badge bg-info">Catalán</span>
+                        {% elif patient.language == "en" %}
+                        <span class="badge bg-info">Inglés</span>
+                        {% elif patient.language == "ar" %}
+                        <span class="badge bg-info">Árabe</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ patient.language }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Fecha de Registro</label>
+                    <div>{{ patient.created_at }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Última Actualización</label>
+                    <div>{{ patient.updated_at }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bell"></i> Acciones Rápidas
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/sessions/new?patient_id={{ patient.id }}" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar-plus"></i> Nueva Sesión
+                    </a>
+                    <a href="/notifications/new?patient_id={{ patient.id }}" class="btn btn-outline-primary">
+                        <i class="bi bi-chat-dots"></i> Enviar Notificación
+                    </a>
+                    <a href="https://wa.me/{{ patient.phone|replace('+', '') }}" target="_blank" class="btn btn-outline-success">
+                        <i class="bi bi-whatsapp"></i> WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sesiones del paciente -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-calendar-check"></i> Sesiones
+                </div>
+                <a href="/sessions/new?patient_id={{ patient.id }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Sesión
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in sessions %}
+                            <tr>
+                                <td>{{ session.session_type }}</td>
+                                <td>{{ session.scheduled_at }}</td>
+                                <td>
+                                    {% if session.status == "scheduled" %}
+                                    <span class="badge bg-primary">Programada</span>
+                                    {% elif session.status == "completed" %}
+                                    <span class="badge bg-success">Completada</span>
+                                    {% elif session.status == "cancelled" %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ session.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/sessions/{{ session.id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">No hay sesiones registradas</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notificaciones del paciente -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-bell"></i> Notificaciones
+                </div>
+                <a href="/notifications/new?patient_id={{ patient.id }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Notificación
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Mensaje</th>
+                                <th>Canal</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for notification in notifications %}
+                            <tr>
+                                <td>{{ notification.message|truncate(50) }}</td>
+                                <td>
+                                    {% if notification.channel == "whatsapp" %}
+                                    <i class="bi bi-whatsapp text-success"></i> WhatsApp
+                                    {% elif notification.channel == "email" %}
+                                    <i class="bi bi-envelope text-primary"></i> Email
+                                    {% else %}
+                                    <i class="bi bi-chat-dots"></i> {{ notification.channel }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if notification.status == "pending" %}
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                    {% elif notification.status == "sent" %}
+                                    <span class="badge bg-success">Enviada</span>
+                                    {% elif notification.status == "failed" %}
+                                    <span class="badge bg-danger">Fallida</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ notification.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ notification.created_at }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">No hay notificaciones registradas</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

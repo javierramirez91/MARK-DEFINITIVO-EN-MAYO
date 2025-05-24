@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Registros de Auditoría - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Registros de Auditoría</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item active">Registros de Auditoría</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-shield-alt me-1"></i>
+                    Registros de Seguridad y Auditoría
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" id="exportBtn">
+                        <i class="fas fa-file-export me-1"></i> Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filtros -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body py-2">
+                            <form id="filterForm" class="row g-2">
+                                <div class="col-md-2">
+                                    <label for="actionFilter" class="form-label">Acción</label>
+                                    <select class="form-select form-select-sm" id="actionFilter">
+                                        <option value="">Todas</option>
+                                        <option value="view">Ver</option>
+                                        <option value="create">Crear</option>
+                                        <option value="update">Actualizar</option>
+                                        <option value="delete">Eliminar</option>
+                                        <option value="login">Inicio de sesión</option>
+                                        <option value="failed_login">Inicio fallido</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="resourceFilter" class="form-label">Recurso</label>
+                                    <select class="form-select form-select-sm" id="resourceFilter">
+                                        <option value="">Todos</option>
+                                        <option value="patient">Paciente</option>
+                                        <option value="session">Sesión</option>
+                                        <option value="notification">Notificación</option>
+                                        <option value="user">Usuario</option>
+                                        <option value="auth">Autenticación</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="userFilter" class="form-label">Usuario</label>
+                                    <select class="form-select form-select-sm" id="userFilter">
+                                        <option value="">Todos</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="therapist">Terapeuta</option>
+                                        <option value="receptionist">Recepcionista</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="dateFrom" class="form-label">Desde</label>
+                                    <input type="datetime-local" class="form-control form-control-sm" id="dateFrom">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="dateTo" class="form-label">Hasta</label>
+                                    <input type="datetime-local" class="form-control form-control-sm" id="dateTo">
+                                </div>
+                                <div class="col-md-12 mt-3">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-filter me-1"></i> Filtrar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-secondary ms-2" id="resetFilters">
+                                        <i class="fas fa-undo me-1"></i> Restablecer
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de registros -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover" id="auditLogsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Usuario</th>
+                            <th>Acción</th>
+                            <th>Recurso</th>
+                            <th>ID Recurso</th>
+                            <th>Dirección IP</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in audit_logs %}
+                        <tr>
+                            <td class="timestamp">{{ log.timestamp }}</td>
+                            <td>
+                                <span class="badge {% if log.user_id == 'admin' %}bg-danger{% elif log.user_id == 'therapist' %}bg-success{% else %}bg-info{% endif %}">
+                                    {{ log.user_id }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if log.action == 'view' %}bg-info{% elif log.action == 'create' %}bg-success{% elif log.action == 'update' %}bg-warning{% elif log.action == 'delete' %}bg-danger{% elif log.action == 'login' %}bg-primary{% elif log.action == 'failed_login' %}bg-dark{% endif %}">
+                                    {{ log.action }}
+                                </span>
+                            </td>
+                            <td>{{ log.resource_type }}</td>
+                            <td>{{ log.resource_id }}</td>
+                            <td>{{ log.ip_address }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary view-details" data-bs-toggle="modal" data-bs-target="#detailsModal" data-log-id="{{ loop.index }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            <nav aria-label="Paginación de registros de auditoría">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de detalles -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">Detalles del Registro de Auditoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Fecha y Hora:</strong> <span id="modal-timestamp"></span></p>
+                        <p><strong>Usuario:</strong> <span id="modal-user"></span></p>
+                        <p><strong>Acción:</strong> <span id="modal-action"></span></p>
+                        <p><strong>Recurso:</strong> <span id="modal-resource"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>ID Recurso:</strong> <span id="modal-resource-id"></span></p>
+                        <p><strong>Dirección IP:</strong> <span id="modal-ip"></span></p>
+                        <p><strong>Navegador:</strong> <span>Mozilla/5.0 (Windows NT 10.0; Win64; x64)</span></p>
+                        <p><strong>Sistema:</strong> <span>Windows 10</span></p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Datos Adicionales</h6>
+                        <pre id="modal-details" class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;">
+{
+    "updated_fields": ["username", "email", "full_name", "roles"],
+    "previous_values": {
+        "username": "old_username",
+        "email": "old_email@example.com"
+    },
+    "new_values": {
+        "username": "new_username",
+        "email": "new_email@example.com"
+    }
+}
+                        </pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatear fechas
+        document.querySelectorAll('.timestamp').forEach(function(el) {
+            const timestamp = new Date(el.textContent.trim());
+            el.textContent = timestamp.toLocaleString('es-ES');
+        });
+        
+        // Mostrar detalles en el modal
+        document.querySelectorAll('.view-details').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const timestamp = row.querySelector('.timestamp').textContent;
+                const user = row.cells[1].textContent.trim();
+                const action = row.cells[2].textContent.trim();
+                const resource = row.cells[3].textContent.trim();
+                const resourceId = row.cells[4].textContent.trim();
+                const ip = row.cells[5].textContent.trim();
+                
+                document.getElementById('modal-timestamp').textContent = timestamp;
+                document.getElementById('modal-user').textContent = user;
+                document.getElementById('modal-action').textContent = action;
+                document.getElementById('modal-resource').textContent = resource;
+                document.getElementById('modal-resource-id').textContent = resourceId;
+                document.getElementById('modal-ip').textContent = ip;
+                
+                // En una implementación real, aquí se cargarían los detalles específicos del registro
+            });
+        });
+        
+        // Restablecer filtros
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            document.getElementById('filterForm').reset();
+        });
+        
+        // Exportar registros (simulado)
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            alert('La exportación de registros se iniciaría aquí en una implementación real.');
+        });
+    });
+</script>
+{% endblock %} 

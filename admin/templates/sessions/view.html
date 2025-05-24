@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}Sesión {{ session.id }} - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Detalles de Sesión</h1>
+    <div>
+        <a href="/sessions" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información de la sesión -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-calendar-check"></i> Información de la Sesión
+                </div>
+                <div>
+                    {% if session.status == "scheduled" %}
+                    <span class="badge bg-primary">Programada</span>
+                    {% elif session.status == "completed" %}
+                    <span class="badge bg-success">Completada</span>
+                    {% elif session.status == "cancelled" %}
+                    <span class="badge bg-danger">Cancelada</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ session.status }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h5>Fecha y Hora</h5>
+                        <p class="format-date">{{ session.scheduled_at }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Tipo de Sesión</h5>
+                        <p>
+                            {% if session.session_type == "individual" %}
+                            <span class="badge bg-primary">Individual</span>
+                            {% elif session.session_type == "couple" %}
+                            <span class="badge bg-info">Pareja</span>
+                            {% elif session.session_type == "family" %}
+                            <span class="badge bg-warning">Familiar</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ session.session_type }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h5>Terapeuta</h5>
+                        <p>{{ session.therapist_name if session.therapist_name else "No asignado" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Duración</h5>
+                        <p>{{ session.duration if session.duration else "60 minutos" }}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h5>Modalidad</h5>
+                        <p>
+                            {% if session.modality == "in_person" %}
+                            <i class="bi bi-building"></i> Presencial
+                            {% elif session.modality == "online" %}
+                            <i class="bi bi-camera-video"></i> Online
+                            {% else %}
+                            {{ session.modality }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Creada</h5>
+                        <p class="format-date">{{ session.created_at }}</p>
+                    </div>
+                </div>
+                
+                {% if session.modality == "online" and session.video_link %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <h5>Enlace de Videoconferencia</h5>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ session.video_link }}" readonly>
+                            <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('{{ session.video_link }}')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            <a href="{{ session.video_link }}" target="_blank" class="btn btn-primary">
+                                <i class="bi bi-box-arrow-up-right"></i> Abrir
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h5>Notas</h5>
+                        <div class="card">
+                            <div class="card-body bg-light">
+                                {% if session.notes %}
+                                <p class="mb-0">{{ session.notes }}</p>
+                                {% else %}
+                                <p class="text-muted mb-0">No hay notas para esta sesión</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        {% if session.status == "scheduled" %}
+                        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#completeModal">
+                            <i class="bi bi-check-circle"></i> Marcar como Completada
+                        </button>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle"></i> Cancelar Sesión
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <a href="/sessions/{{ session.id }}/edit" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Historial de cambios -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history"></i> Historial de Cambios
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Acción</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in session_history %}
+                            <tr>
+                                <td class="format-date">{{ event.timestamp }}</td>
+                                <td>{{ event.user }}</td>
+                                <td>{{ event.action }}</td>
+                                <td>{{ event.details }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center">No hay eventos registrados</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información del paciente -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-person"></i> Información del Paciente
+            </div>
+            <div class="card-body">
+                <h5>{{ patient.name }}</h5>
+                <p class="text-muted">ID: {{ patient.id }}</p>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-telephone"></i> Teléfono</h6>
+                    <p class="format-phone">{{ patient.phone }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-envelope"></i> Email</h6>
+                    <p>{{ patient.email if patient.email else "No disponible" }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-translate"></i> Idioma</h6>
+                    <p>
+                        {% if patient.language == "es" %}
+                        <span class="badge bg-info">Español</span>
+                        {% elif patient.language == "ca" %}
+                        <span class="badge bg-info">Catalán</span>
+                        {% elif patient.language == "en" %}
+                        <span class="badge bg-info">Inglés</span>
+                        {% elif patient.language == "ar" %}
+                        <span class="badge bg-info">Árabe</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ patient.language }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="/patients/{{ patient.id }}" class="btn btn-outline-primary">
+                        <i class="bi bi-person-badge"></i> Ver Perfil Completo
+                    </a>
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#sendNotificationModal">
+                        <i class="bi bi-chat-dots"></i> Enviar Notificación
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sesiones anteriores -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-calendar-range"></i> Sesiones Anteriores
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for prev_session in previous_sessions %}
+                    <a href="/sessions/{{ prev_session.id }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ prev_session.session_type|title }}</h6>
+                            <small class="text-muted format-date">{{ prev_session.scheduled_at }}</small>
+                        </div>
+                        <p class="mb-1">
+                            {% if prev_session.status == "completed" %}
+                            <span class="badge bg-success">Completada</span>
+                            {% elif prev_session.status == "cancelled" %}
+                            <span class="badge bg-danger">Cancelada</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ prev_session.status }}</span>
+                            {% endif %}
+                        </p>
+                    </a>
+                    {% else %}
+                    <div class="list-group-item">
+                        <p class="text-muted mb-0">No hay sesiones anteriores</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para marcar como completada -->
+<div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Completar Sesión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/sessions/{{ session.id }}/complete" method="post">
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas marcar esta sesión como completada?</p>
+                    
+                    <div class="mb-3">
+                        <label for="completion_notes" class="form-label">Notas de la sesión (opcional)</label>
+                        <textarea class="form-control" id="completion_notes" name="completion_notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Marcar como Completada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cancelar sesión -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancelar Sesión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/sessions/{{ session.id }}/cancel" method="post">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Esta acción notificará al paciente sobre la cancelación.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cancellation_reason" class="form-label">Motivo de cancelación</label>
+                        <select class="form-select" id="cancellation_reason" name="cancellation_reason" required>
+                            <option value="" selected disabled>Seleccionar motivo...</option>
+                            <option value="patient_request">Solicitud del paciente</option>
+                            <option value="therapist_unavailable">Terapeuta no disponible</option>
+                            <option value="rescheduled">Reprogramada</option>
+                            <option value="other">Otro motivo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cancellation_notes" class="form-label">Notas adicionales</label>
+                        <textarea class="form-control" id="cancellation_notes" name="cancellation_notes" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="notify_patient" name="notify_patient" checked>
+                        <label class="form-check-label" for="notify_patient">
+                            Notificar al paciente
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Volver</button>
+                    <button type="submit" class="btn btn-danger">Cancelar Sesión</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para enviar notificación -->
+<div class="modal fade" id="sendNotificationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Enviar Notificación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/notifications/new" method="post">
+                <div class="modal-body">
+                    <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Mensaje</label>
+                        <textarea class="form-control" id="message" name="message" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="channel" class="form-label">Canal</label>
+                        <select class="form-select" id="channel" name="channel">
+                            <option value="whatsapp" selected>WhatsApp</option>
+                            <option value="email">Email</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scheduled_at" class="form-label">Programar para (opcional)</label>
+                        <input type="datetime-local" class="form-control" id="scheduled_at" name="scheduled_at">
+                        <div class="form-text">Dejar en blanco para enviar inmediatamente</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Enviar Notificación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('Enlace copiado al portapapeles', 'success');
+        }, function(err) {
+            console.error('Error al copiar: ', err);
+            showToast('Error al copiar el enlace', 'danger');
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatear fechas
+        document.querySelectorAll('.format-date').forEach(function(element) {
+            const date = new Date(element.textContent);
+            if (!isNaN(date.getTime())) {
+                element.textContent = date.toLocaleString('es-ES');
+            }
+        });
+        
+        // Formatear teléfonos
+        document.querySelectorAll('.format-phone').forEach(function(element) {
+            let phone = element.textContent.trim();
+            if (phone && !phone.startsWith('+')) {
+                phone = '+34' + phone;
+            }
+            element.textContent = phone;
+        });
+    });
+</script>
+{% endblock %} 

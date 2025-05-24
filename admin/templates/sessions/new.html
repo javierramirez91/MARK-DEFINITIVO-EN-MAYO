@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Sesión - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Nueva Sesión</h1>
+    <div>
+        <a href="/sessions" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-calendar-plus"></i> Detalles de la Sesión
+            </div>
+            <div class="card-body">
+                <form id="newSessionForm" action="/sessions/create" method="post">
+                    <!-- Paciente -->
+                    <div class="mb-4">
+                        <label for="patient_id" class="form-label">Paciente <span class="text-danger">*</span></label>
+                        <select class="form-select" id="patient_id" name="patient_id" required>
+                            <option value="" selected disabled>Seleccionar paciente...</option>
+                            {% for patient in patients %}
+                            <option value="{{ patient.id }}">{{ patient.name }} ({{ patient.phone }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            <a href="/patients/new" target="_blank">
+                                <i class="bi bi-plus-circle"></i> Crear nuevo paciente
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <!-- Tipo de sesión -->
+                        <div class="col-md-6">
+                            <label for="session_type" class="form-label">Tipo de Sesión <span class="text-danger">*</span></label>
+                            <select class="form-select" id="session_type" name="session_type" required>
+                                <option value="" selected disabled>Seleccionar tipo...</option>
+                                <option value="individual">Individual</option>
+                                <option value="couple">Pareja</option>
+                                <option value="family">Familiar</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Modalidad -->
+                        <div class="col-md-6">
+                            <label for="modality" class="form-label">Modalidad <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modality" name="modality" required onchange="toggleVideoLink()">
+                                <option value="" selected disabled>Seleccionar modalidad...</option>
+                                <option value="in_person">Presencial</option>
+                                <option value="online">Online</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <!-- Fecha -->
+                        <div class="col-md-6">
+                            <label for="session_date" class="form-label">Fecha <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="session_date" name="session_date" required>
+                        </div>
+                        
+                        <!-- Hora -->
+                        <div class="col-md-6">
+                            <label for="session_time" class="form-label">Hora <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="session_time" name="session_time" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <!-- Duración -->
+                        <div class="col-md-6">
+                            <label for="duration" class="form-label">Duración (minutos)</label>
+                            <input type="number" class="form-control" id="duration" name="duration" value="60" min="15" step="15">
+                        </div>
+                        
+                        <!-- Terapeuta -->
+                        <div class="col-md-6">
+                            <label for="therapist_name" class="form-label">Terapeuta</label>
+                            <select class="form-select" id="therapist_name" name="therapist_name">
+                                <option value="" selected>Sin asignar</option>
+                                {% for therapist in therapists %}
+                                <option value="{{ therapist.name }}">{{ therapist.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Enlace de videoconferencia (solo para sesiones online) -->
+                    <div class="mb-4" id="videoLinkContainer" style="display: none;">
+                        <label for="video_link" class="form-label">Enlace de Videoconferencia</label>
+                        <div class="input-group">
+                            <input type="url" class="form-control" id="video_link" name="video_link" placeholder="https://zoom.us/j/...">
+                            <button class="btn btn-outline-secondary" type="button" onclick="generateVideoLink()">
+                                <i class="bi bi-magic"></i> Generar
+                            </button>
+                        </div>
+                        <div class="form-text">Enlace para la sesión online. Se enviará al paciente automáticamente.</div>
+                    </div>
+                    
+                    <!-- Notas -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    
+                    <!-- Opciones adicionales -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="send_notification" name="send_notification" checked>
+                            <label class="form-check-label" for="send_notification">
+                                Enviar notificación al paciente
+                            </label>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="send_reminder" name="send_reminder" checked>
+                            <label class="form-check-label" for="send_reminder">
+                                Programar recordatorio (24h antes)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/sessions'">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Crear Sesión</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Horarios disponibles -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-clock"></i> Horarios Disponibles
+            </div>
+            <div class="card-body">
+                <div id="availableSlots">
+                    <p class="text-muted text-center">Selecciona una fecha para ver los horarios disponibles</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información de ayuda -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información
+            </div>
+            <div class="card-body">
+                <h5>Tipos de Sesión</h5>
+                <ul>
+                    <li><strong>Individual:</strong> Sesión con un solo paciente</li>
+                    <li><strong>Pareja:</strong> Sesión con dos personas en relación</li>
+                    <li><strong>Familiar:</strong> Sesión con múltiples miembros de una familia</li>
+                </ul>
+                
+                <h5>Modalidades</h5>
+                <ul>
+                    <li><strong>Presencial:</strong> En el centro ({{ center_address }})</li>
+                    <li><strong>Online:</strong> A través de videoconferencia</li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-lightbulb"></i> Las sesiones se pueden reprogramar o cancelar hasta 24 horas antes de la hora programada.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleVideoLink() {
+        const modality = document.getElementById('modality').value;
+        const videoLinkContainer = document.getElementById('videoLinkContainer');
+        
+        if (modality === 'online') {
+            videoLinkContainer.style.display = 'block';
+        } else {
+            videoLinkContainer.style.display = 'none';
+            document.getElementById('video_link').value = '';
+        }
+    }
+    
+    function generateVideoLink() {
+        // En un entorno real, esto podría hacer una llamada a la API de Zoom o similar
+        const randomId = Math.floor(Math.random() * 1000000000);
+        const videoLink = `https://zoom.us/j/${randomId}`;
+        document.getElementById('video_link').value = videoLink;
+    }
+    
+    function loadAvailableSlots() {
+        const date = document.getElementById('session_date').value;
+        const availableSlotsContainer = document.getElementById('availableSlots');
+        
+        if (!date) {
+            availableSlotsContainer.innerHTML = '<p class="text-muted text-center">Selecciona una fecha para ver los horarios disponibles</p>';
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        availableSlotsContainer.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+        
+        // En un entorno real, esto haría una llamada a la API para obtener los horarios disponibles
+        // Simulamos una respuesta después de un breve retraso
+        setTimeout(() => {
+            // Generar horarios de ejemplo
+            const slots = [
+                { time: '09:00', available: true },
+                { time: '10:00', available: true },
+                { time: '11:00', available: false },
+                { time: '12:00', available: true },
+                { time: '16:00', available: true },
+                { time: '17:00', available: false },
+                { time: '18:00', available: true }
+            ];
+            
+            let html = '<div class="list-group">';
+            slots.forEach(slot => {
+                if (slot.available) {
+                    html += `<button type="button" class="list-group-item list-group-item-action" onclick="selectTimeSlot('${slot.time}')">
+                        <i class="bi bi-clock"></i> ${slot.time}
+                    </button>`;
+                } else {
+                    html += `<button type="button" class="list-group-item list-group-item-action disabled">
+                        <i class="bi bi-x-circle"></i> ${slot.time} <span class="text-muted">(No disponible)</span>
+                    </button>`;
+                }
+            });
+            html += '</div>';
+            
+            availableSlotsContainer.innerHTML = html;
+        }, 500);
+    }
+    
+    function selectTimeSlot(time) {
+        document.getElementById('session_time').value = time;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar horarios disponibles cuando se selecciona una fecha
+        document.getElementById('session_date').addEventListener('change', loadAvailableSlots);
+        
+        // Establecer la fecha mínima como hoy
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${yyyy}-${mm}-${dd}`;
+        
+        document.getElementById('session_date').min = formattedDate;
+        
+        // Validación del formulario
+        document.getElementById('newSessionForm').addEventListener('submit', function(event) {
+            const patientId = document.getElementById('patient_id').value;
+            const sessionType = document.getElementById('session_type').value;
+            const modality = document.getElementById('modality').value;
+            const sessionDate = document.getElementById('session_date').value;
+            const sessionTime = document.getElementById('session_time').value;
+            
+            if (!patientId || !sessionType || !modality || !sessionDate || !sessionTime) {
+                event.preventDefault();
+                showToast('Por favor, completa todos los campos obligatorios', 'danger');
+            }
+        });
+    });
+</script>
+{% endblock %} 

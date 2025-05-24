@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Sesiones - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Gestión de Sesiones</h1>
+    <div>
+        <a href="/sessions/new" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Sesión
+        </a>
+    </div>
+</div>
+
+<!-- Filtros y búsqueda -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="filterForm" method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="status" class="form-label">Estado</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="" {% if not request.args.get('status') %}selected{% endif %}>Todos</option>
+                    <option value="scheduled" {% if request.args.get('status') == 'scheduled' %}selected{% endif %}>Programadas</option>
+                    <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completadas</option>
+                    <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Canceladas</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="session_type" class="form-label">Tipo</label>
+                <select class="form-select" id="session_type" name="session_type">
+                    <option value="" {% if not request.args.get('session_type') %}selected{% endif %}>Todos</option>
+                    <option value="individual" {% if request.args.get('session_type') == 'individual' %}selected{% endif %}>Individual</option>
+                    <option value="couple" {% if request.args.get('session_type') == 'couple' %}selected{% endif %}>Pareja</option>
+                    <option value="family" {% if request.args.get('session_type') == 'family' %}selected{% endif %}>Familiar</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">Desde</label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}">
+            </div>
+            
+            <div class="col-md-3">
+                <label for="date_to" class="form-label">Hasta</label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}">
+            </div>
+            
+            <div class="col-md-6">
+                <label for="search" class="form-label">Buscar</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="search" name="search" placeholder="Nombre del paciente, terapeuta..." value="{{ request.args.get('search', '') }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="modality" class="form-label">Modalidad</label>
+                <select class="form-select" id="modality" name="modality">
+                    <option value="" {% if not request.args.get('modality') %}selected{% endif %}>Todas</option>
+                    <option value="in_person" {% if request.args.get('modality') == 'in_person' %}selected{% endif %}>Presencial</option>
+                    <option value="online" {% if request.args.get('modality') == 'online' %}selected{% endif %}>Online</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <div class="d-grid gap-2 w-100">
+                    <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">Limpiar Filtros</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Pestañas para diferentes vistas -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if request.args.get('view', 'upcoming') == 'upcoming' %}active{% endif %}" href="?view=upcoming">Próximas</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.args.get('view') == 'today' %}active{% endif %}" href="?view=today">Hoy</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.args.get('view') == 'week' %}active{% endif %}" href="?view=week">Esta Semana</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.args.get('view') == 'past' %}active{% endif %}" href="?view=past">Pasadas</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.args.get('view') == 'all' %}active{% endif %}" href="?view=all">Todas</a>
+    </li>
+</ul>
+
+<!-- Tabla de sesiones -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha y Hora</th>
+                        <th>Paciente</th>
+                        <th>Tipo</th>
+                        <th>Modalidad</th>
+                        <th>Terapeuta</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td>{{ session.id }}</td>
+                        <td class="format-date">{{ session.scheduled_at }}</td>
+                        <td>
+                            <a href="/patients/{{ session.patient_id }}">{{ session.patient_name }}</a>
+                        </td>
+                        <td>
+                            {% if session.session_type == "individual" %}
+                            <span class="badge bg-primary">Individual</span>
+                            {% elif session.session_type == "couple" %}
+                            <span class="badge bg-info">Pareja</span>
+                            {% elif session.session_type == "family" %}
+                            <span class="badge bg-warning">Familiar</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ session.session_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if session.modality == "in_person" %}
+                            <i class="bi bi-building"></i> Presencial
+                            {% elif session.modality == "online" %}
+                            <i class="bi bi-camera-video"></i> Online
+                            {% else %}
+                            {{ session.modality }}
+                            {% endif %}
+                        </td>
+                        <td>{{ session.therapist_name if session.therapist_name else "No asignado" }}</td>
+                        <td>
+                            {% if session.status == "scheduled" %}
+                            <span class="badge bg-primary">Programada</span>
+                            {% elif session.status == "completed" %}
+                            <span class="badge bg-success">Completada</span>
+                            {% elif session.status == "cancelled" %}
+                            <span class="badge bg-danger">Cancelada</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ session.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton{{ session.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Acciones
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton{{ session.id }}">
+                                    <li><a class="dropdown-item" href="/sessions/{{ session.id }}">
+                                        <i class="bi bi-eye"></i> Ver Detalles
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="/sessions/{{ session.id }}/edit">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </a></li>
+                                    {% if session.status == "scheduled" %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-success" href="#" onclick="showCompleteModal('{{ session.id }}')">
+                                        <i class="bi bi-check-circle"></i> Marcar Completada
+                                    </a></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="showCancelModal('{{ session.id }}')">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4">
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle"></i> No se encontraron sesiones con los criterios seleccionados
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        {% if total_pages > 1 %}
+        <nav aria-label="Paginación de sesiones">
+            <ul class="pagination justify-content-center mt-4">
+                <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
+                    <a class="page-link" href="{{ update_query_params(request.args, page=current_page-1) }}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                
+                {% for page in range(1, total_pages + 1) %}
+                <li class="page-item {% if page == current_page %}active{% endif %}">
+                    <a class="page-link" href="{{ update_query_params(request.args, page=page) }}">{{ page }}</a>
+                </li>
+                {% endfor %}
+                
+                <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
+                    <a class="page-link" href="{{ update_query_params(request.args, page=current_page+1) }}" aria-label="Siguiente">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para marcar como completada -->
+<div class="modal fade" id="completeSessionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Completar Sesión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="completeSessionForm" action="" method="post">
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas marcar esta sesión como completada?</p>
+                    
+                    <div class="mb-3">
+                        <label for="completion_notes" class="form-label">Notas de la sesión (opcional)</label>
+                        <textarea class="form-control" id="completion_notes" name="completion_notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Marcar como Completada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cancelar sesión -->
+<div class="modal fade" id="cancelSessionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancelar Sesión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="cancelSessionForm" action="" method="post">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Esta acción notificará al paciente sobre la cancelación.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cancellation_reason" class="form-label">Motivo de cancelación</label>
+                        <select class="form-select" id="cancellation_reason" name="cancellation_reason" required>
+                            <option value="" selected disabled>Seleccionar motivo...</option>
+                            <option value="patient_request">Solicitud del paciente</option>
+                            <option value="therapist_unavailable">Terapeuta no disponible</option>
+                            <option value="rescheduled">Reprogramada</option>
+                            <option value="other">Otro motivo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cancellation_notes" class="form-label">Notas adicionales</label>
+                        <textarea class="form-control" id="cancellation_notes" name="cancellation_notes" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="notify_patient" name="notify_patient" checked>
+                        <label class="form-check-label" for="notify_patient">
+                            Notificar al paciente
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Volver</button>
+                    <button type="submit" class="btn btn-danger">Cancelar Sesión</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function resetFilters() {
+        document.getElementById('status').value = '';
+        document.getElementById('session_type').value = '';
+        document.getElementById('date_from').value = '';
+        document.getElementById('date_to').value = '';
+        document.getElementById('search').value = '';
+        document.getElementById('modality').value = '';
+        document.getElementById('filterForm').submit();
+    }
+    
+    function showCompleteModal(sessionId) {
+        document.getElementById('completeSessionForm').action = `/sessions/${sessionId}/complete`;
+        var completeModal = new bootstrap.Modal(document.getElementById('completeSessionModal'));
+        completeModal.show();
+    }
+    
+    function showCancelModal(sessionId) {
+        document.getElementById('cancelSessionForm').action = `/sessions/${sessionId}/cancel`;
+        var cancelModal = new bootstrap.Modal(document.getElementById('cancelSessionModal'));
+        cancelModal.show();
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatear fechas
+        document.querySelectorAll('.format-date').forEach(function(element) {
+            const date = new Date(element.textContent);
+            if (!isNaN(date.getTime())) {
+                element.textContent = date.toLocaleString('es-ES');
+            }
+        });
+        
+        // Mantener los filtros al cambiar de página
+        document.querySelectorAll('.nav-tabs .nav-link').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Obtener los parámetros actuales
+                const urlParams = new URLSearchParams(window.location.search);
+                
+                // Obtener la vista del enlace
+                const view = this.getAttribute('href').split('=')[1];
+                
+                // Actualizar el parámetro de vista
+                urlParams.set('view', view);
+                
+                // Redirigir a la nueva URL
+                window.location.href = `?${urlParams.toString()}`;
+            });
+        });
+    });
+</script>
+{% endblock %} 

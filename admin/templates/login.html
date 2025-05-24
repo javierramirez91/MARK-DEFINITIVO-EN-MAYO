@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Admin - Iniciar Sesión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+        }
+        .login-container {
+            max-width: 400px;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 1.5rem; /* Reducido un poco el margen */
+        }
+        .logo h1 {
+            color: #4a6baf;
+            font-weight: bold;
+            font-size: 1.8rem; /* Ajustado el tamaño */
+        }
+        .btn-primary {
+            background-color: #4a6baf;
+            border-color: #4a6baf;
+            width: 100%; /* Botón más ancho */
+        }
+        .btn-primary:hover {
+            background-color: #3e5a95;
+            border-color: #3e5a95;
+        }
+        .form-label {
+            font-weight: 500;
+        }
+        .form-control:focus {
+            border-color: #8ab4f8;
+            box-shadow: 0 0 0 0.25rem rgba(74, 107, 175, 0.25);
+        }
+        #error-message-div {
+            color: #dc3545; /* Color de error de Bootstrap */
+            margin-top: 10px;
+            margin-bottom: 10px; /* Espacio antes del formulario si hay error */
+            display: none; /* Oculto por defecto */
+            text-align: center;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>Mark Admin</h1>
+        </div>
+        <p class="text-center mb-4">Panel de Administración</p>
+
+        <div id="error-message-div"></div>
+
+        <form id="loginForm">
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuario</label>
+                <input type="text" class="form-control" id="username" name="username" required value="admin">
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" required value="changeme123">
+            </div>
+            <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+        </form>
+    </div>
+
+<script>
+const loginForm = document.getElementById('loginForm');
+const errorMessageDiv = document.getElementById('error-message-div');
+
+if (loginForm) {
+    loginForm.addEventListener('submit', async function(event) {
+        event.preventDefault(); // Evita el envío tradicional del formulario
+
+        const username = event.target.username.value;
+        const password = event.target.password.value;
+
+        // Crear el cuerpo de la solicitud como URLSearchParams para que FastAPI lo entienda
+        // como form data para OAuth2PasswordRequestForm.
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        if (errorMessageDiv) errorMessageDiv.style.display = 'none'; // Ocultar error previo
+
+        try {
+            const response = await fetch('/token', { // El endpoint de tu backend para obtener el token
+                method: 'POST',
+                body: formData // FastAPI espera 'application/x-www-form-urlencoded' para OAuth2PasswordRequestForm
+            });
+
+            const responseData = await response.json(); // Intenta parsear la respuesta como JSON
+
+            if (response.ok && responseData.access_token) {
+                console.log('Token recibido:', responseData.access_token);
+                localStorage.setItem('accessToken', responseData.access_token); // Guardar token en localStorage
+                localStorage.setItem('tokenType', responseData.token_type || 'bearer');
+
+                // Opción 1: Redirigir y que /dashboard use JavaScript para cargar datos con el token
+                // window.location.href = '/dashboard'; 
+                // Si haces esto, /dashboard NECESITA tener JavaScript que:
+                // 1. Al cargarse, intente leer el token de localStorage.
+                // 2. Si no hay token, redirija a /.
+                // 3. Para CUALQUIER dato que necesite cargar (ej. /api/stats/), use fetch CON la cabecera Authorization.
+
+                // Opción 2: (LA QUE USAREMOS PARA LA PRÓXIMA PRUEBA, LUEGO CAMBIAMOS A CABECERA)
+                // Redirigir a /dashboard CON EL TOKEN EN LA URL (PARA PRUEBA INICIAL)
+                // ESTO ES SOLO PARA VERIFICAR QUE EL TOKEN LLEGA AL BACKEND EN GET_CURRENT_USER_WITH_ROLES
+                // LUEGO LO CAMBIAREMOS POR EL MÉTODO DE CABECERA AUTHORIZATION.
+                console.log('Redirigiendo a /dashboard con token en URL para prueba...');
+                window.location.href = `/dashboard?token=${encodeURIComponent(responseData.access_token)}`;
+
+            } else {
+                console.error("Error de login o token no recibido:", responseData);
+                if (errorMessageDiv) {
+                    errorMessageDiv.innerText = responseData.detail || "Usuario o contraseña incorrectos, o error del servidor.";
+                    errorMessageDiv.style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.error("Error en la solicitud de fetch a /token:", error);
+            if (errorMessageDiv) {
+                errorMessageDiv.innerText = "Error de red o al procesar la solicitud. Verifique la consola del backend.";
+                errorMessageDiv.style.display = 'block';
+            }
+        }
+    });
+}
+
+// Opcional: ocultar mensaje de error al empezar a escribir en los campos
+const usernameInput = document.querySelector('input[name="username"]');
+const passwordInput = document.querySelector('input[name="password"]');
+
+if (usernameInput && errorMessageDiv) {
+    usernameInput.addEventListener('input', () => { if(errorMessageDiv && errorMessageDiv.style.display !== 'none') errorMessageDiv.style.display = 'none'; });
+}
+if (passwordInput && errorMessageDiv) {
+    passwordInput.addEventListener('input', () => { if(errorMessageDiv && errorMessageDiv.style.display !== 'none') errorMessageDiv.style.display = 'none'; });
+}
+</script>
+
+</body>
+</html>

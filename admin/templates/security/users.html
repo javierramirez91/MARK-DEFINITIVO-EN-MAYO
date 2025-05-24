@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Gestión de Usuarios</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item active">Usuarios</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-users me-1"></i>
+                    Usuarios del Sistema
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newUserModal">
+                        <i class="fas fa-user-plus me-1"></i> Nuevo Usuario
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Filtros -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body py-2">
+                            <form id="filterForm" class="row g-2">
+                                <div class="col-md-3">
+                                    <label for="roleFilter" class="form-label">Rol</label>
+                                    <select class="form-select form-select-sm" id="roleFilter">
+                                        <option value="">Todos</option>
+                                        <option value="admin">Administrador</option>
+                                        <option value="therapist">Terapeuta</option>
+                                        <option value="receptionist">Recepcionista</option>
+                                        <option value="viewer">Solo lectura</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="statusFilter" class="form-label">Estado</label>
+                                    <select class="form-select form-select-sm" id="statusFilter">
+                                        <option value="">Todos</option>
+                                        <option value="active">Activo</option>
+                                        <option value="locked">Bloqueado</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="searchFilter" class="form-label">Buscar</label>
+                                    <input type="text" class="form-control form-control-sm" id="searchFilter" placeholder="Nombre, email o usuario...">
+                                </div>
+                                <div class="col-md-12 mt-3">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-filter me-1"></i> Filtrar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-secondary ms-2" id="resetFilters">
+                                        <i class="fas fa-undo me-1"></i> Restablecer
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabla de usuarios -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover" id="usersTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Último Acceso</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user_item in users %}
+                        <tr>
+                            <td>{{ user_item.id }}</td>
+                            <td>{{ user_item.username }}</td>
+                            <td>{{ user_item.full_name }}</td>
+                            <td>{{ user_item.email }}</td>
+                            <td>
+                                {% for role in user_item.roles %}
+                                <span class="badge {% if role == 'admin' %}bg-danger{% elif role == 'therapist' %}bg-success{% elif role == 'receptionist' %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {{ role }}
+                                </span>
+                                {% endfor %}
+                            </td>
+                            <td class="timestamp">{{ user_item.last_login }}</td>
+                            <td>
+                                {% if user_item.account_locked %}
+                                <span class="badge bg-danger">Bloqueado</span>
+                                {% else %}
+                                <span class="badge bg-success">Activo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="/security/user/{{ user_item.id }}/edit" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger delete-user" data-bs-toggle="modal" data-bs-target="#deleteUserModal" data-user-id="{{ user_item.id }}" data-user-name="{{ user_item.username }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% if user_item.account_locked %}
+                                    <button class="btn btn-sm btn-outline-success unlock-user" data-user-id="{{ user_item.id }}" data-user-name="{{ user_item.username }}">
+                                        <i class="fas fa-unlock"></i>
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-outline-warning lock-user" data-user-id="{{ user_item.id }}" data-user-name="{{ user_item.username }}">
+                                        <i class="fas fa-lock"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            <nav aria-label="Paginación de usuarios">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para nuevo usuario -->
+<div class="modal fade" id="newUserModal" tabindex="-1" aria-labelledby="newUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newUserModalLabel">Crear Nuevo Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/security/user/create" method="post">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="username" class="form-label">Nombre de Usuario</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="full_name" class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Roles</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="admin" id="role_admin" name="roles">
+                                <label class="form-check-label" for="role_admin">
+                                    Administrador
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="therapist" id="role_therapist" name="roles">
+                                <label class="form-check-label" for="role_therapist">
+                                    Terapeuta
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="receptionist" id="role_receptionist" name="roles">
+                                <label class="form-check-label" for="role_receptionist">
+                                    Recepcionista
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="viewer" id="role_viewer" name="roles">
+                                <label class="form-check-label" for="role_viewer">
+                                    Solo lectura
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        El usuario recibirá un email con sus credenciales de acceso.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para eliminar usuario -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar al usuario <strong id="delete-user-name"></strong>?</p>
+                <p class="text-danger">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteUserForm" action="/security/user/0/delete" method="post">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatear fechas
+        document.querySelectorAll('.timestamp').forEach(function(el) {
+            const timestamp = new Date(el.textContent.trim());
+            el.textContent = timestamp.toLocaleString('es-ES');
+        });
+        
+        // Configurar modal de eliminación
+        document.querySelectorAll('.delete-user').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                const userName = this.getAttribute('data-user-name');
+                
+                document.getElementById('delete-user-name').textContent = userName;
+                document.getElementById('deleteUserForm').action = `/security/user/${userId}/delete`;
+            });
+        });
+        
+        // Bloquear/Desbloquear usuario
+        document.querySelectorAll('.lock-user, .unlock-user').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                const userName = this.getAttribute('data-user-name');
+                const action = this.classList.contains('lock-user') ? 'bloquear' : 'desbloquear';
+                
+                if (confirm(`¿Está seguro de que desea ${action} al usuario ${userName}?`)) {
+                    // En una implementación real, aquí se enviaría una solicitud al servidor
+                    alert(`El usuario ${userName} ha sido ${action === 'bloquear' ? 'bloqueado' : 'desbloqueado'}.`);
+                    // Recargar la página para reflejar los cambios
+                    window.location.reload();
+                }
+            });
+        });
+        
+        // Restablecer filtros
+        document.getElementById('resetFilters').addEventListener('click', function() {
+            document.getElementById('filterForm').reset();
+        });
+    });
+</script>
+{% endblock %} 

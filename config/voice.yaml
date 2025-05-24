@@ -1,0 +1,106 @@
+# Voice Configuration for Mark Assistant
+# This file contains settings for voice processing and synthesis
+
+# Hume EVI Configuration
+hume_evi:
+  api_key: "${HUME_API_KEY}"
+  default_voice_id: "evi_spanish_female"
+  
+  # Voice IDs for different languages
+  voices:
+    es: "evi_spanish_female"
+    ca: "evi_catalan_female"
+    en: "evi_english_female"
+    ar: "evi_arabic_female"
+  
+  # Prosody settings control how the voice sounds
+  prosody:
+    rate: 1.0      # Speech rate (0.5-2.0)
+    pitch: 0.0     # Pitch adjustment (-10.0 to 10.0)
+    volume: 1.0    # Volume (0.0-2.0)
+  
+  # Emotion settings for different contexts
+  emotion:
+    default:
+      empathy: 0.8       # Empathy level (0.0-1.0)
+      professional: 0.7  # Professionalism level (0.0-1.0)
+    
+    greeting:
+      empathy: 0.9
+      professional: 0.8
+      warmth: 0.8
+    
+    appointment:
+      empathy: 0.7
+      professional: 0.9
+      clarity: 0.9
+    
+    crisis:
+      empathy: 1.0
+      professional: 0.8
+      concern: 0.9
+  
+  # Audio output settings
+  audio:
+    format: "mp3"         # Output format (mp3, wav, ogg)
+    quality: "high"       # Audio quality (low, medium, high)
+    max_duration: 60      # Maximum duration in seconds
+    sample_rate: 24000    # Sample rate in Hz
+
+# Voice transcription settings
+transcription:
+  provider: "whisper"     # Speech recognition provider (whisper, google, azure)
+  model: "whisper-1"      # Model to use for transcription
+  language: "auto"        # Language code or "auto" for automatic detection
+  timeout: 30             # Timeout in seconds
+  
+  # Whisper-specific settings
+  whisper:
+    api_key: "${OPENAI_API_KEY}"
+    temperature: 0.0      # Lower values for more deterministic results
+    prompt: ""            # Optional prompt to guide transcription
+  
+  # Google Speech-to-Text settings (alternative)
+  google:
+    enabled: false
+    credentials_path: "config/google_credentials.json"
+    model: "latest_long"
+  
+  # Azure Speech-to-Text settings (alternative)
+  azure:
+    enabled: false
+    api_key: "${AZURE_SPEECH_KEY}"
+    region: "westeurope"
+
+# Voice processing settings
+processing:
+  cache_enabled: true                 # Enable caching of voice responses
+  cache_dir: "data/voice_cache"       # Directory for cached voice files
+  cache_expiry: 604800                # Cache expiry in seconds (7 days)
+  max_message_length: 500             # Maximum text length for voice synthesis
+  async_processing: true              # Process voice in background tasks
+  
+  # Filters for voice messages
+  filters:
+    noise_reduction: true             # Apply noise reduction to incoming voice messages
+    silence_trimming: true            # Trim silence from beginning and end
+    normalize_volume: true            # Normalize volume levels
+
+# Voice analytics
+analytics:
+  enabled: true
+  log_transcriptions: true            # Log all transcriptions for analysis
+  log_synthesis_requests: true        # Log all synthesis requests
+  sentiment_analysis: false           # Analyze sentiment in voice messages
+  
+# Rate limiting to prevent API abuse
+rate_limiting:
+  max_transcriptions_per_day: 1000    # Maximum transcriptions per day
+  max_synthesis_per_day: 1000         # Maximum voice synthesis requests per day
+  max_duration_per_day: 3600          # Maximum seconds of audio per day (1 hour)
+
+# Webhook notifications for voice events
+webhooks:
+  transcription_complete: ""          # URL to notify when transcription is complete
+  synthesis_complete: ""              # URL to notify when synthesis is complete
+  error_notification: ""              # URL to notify on errors 

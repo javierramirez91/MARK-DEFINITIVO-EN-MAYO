@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Sesión - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Editar Sesión</h1>
+    <div>
+        <a href="/sessions/{{ session.id }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Detalles
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-calendar-check"></i> Detalles de la Sesión
+            </div>
+            <div class="card-body">
+                <form id="editSessionForm" action="/sessions/{{ session.id }}/update" method="post">
+                    <!-- Paciente (no editable) -->
+                    <div class="mb-4">
+                        <label for="patient_name" class="form-label">Paciente</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="patient_name" value="{{ patient.name }}" readonly>
+                            <a href="/patients/{{ patient.id }}" class="btn btn-outline-primary">
+                                <i class="bi bi-person-badge"></i> Ver Perfil
+                            </a>
+                        </div>
+                        <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <!-- Tipo de sesión -->
+                        <div class="col-md-6">
+                            <label for="session_type" class="form-label">Tipo de Sesión <span class="text-danger">*</span></label>
+                            <select class="form-select" id="session_type" name="session_type" required>
+                                <option value="individual" {% if session.session_type == 'individual' %}selected{% endif %}>Individual</option>
+                                <option value="couple" {% if session.session_type == 'couple' %}selected{% endif %}>Pareja</option>
+                                <option value="family" {% if session.session_type == 'family' %}selected{% endif %}>Familiar</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Modalidad -->
+                        <div class="col-md-6">
+                            <label for="modality" class="form-label">Modalidad <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modality" name="modality" required onchange="toggleVideoLink()">
+                                <option value="in_person" {% if session.modality == 'in_person' %}selected{% endif %}>Presencial</option>
+                                <option value="online" {% if session.modality == 'online' %}selected{% endif %}>Online</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <!-- Fecha -->
+                        <div class="col-md-6">
+                            <label for="session_date" class="form-label">Fecha <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="session_date" name="session_date" value="{{ session.scheduled_at.split('T')[0] }}" required>
+                        </div>
+                        
+                        <!-- Hora -->
+                        <div class="col-md-6">
+                            <label for="session_time" class="form-label">Hora <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="session_time" name="session_time" value="{{ session.scheduled_at.split('T')[1].split(':')[0] }}:{{ session.scheduled_at.split('T')[1].split(':')[1] }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <!-- Duración -->
+                        <div class="col-md-6">
+                            <label for="duration" class="form-label">Duración (minutos)</label>
+                            <input type="number" class="form-control" id="duration" name="duration" value="{{ session.duration if session.duration else 60 }}" min="15" step="15">
+                        </div>
+                        
+                        <!-- Terapeuta -->
+                        <div class="col-md-6">
+                            <label for="therapist_name" class="form-label">Terapeuta</label>
+                            <select class="form-select" id="therapist_name" name="therapist_name">
+                                <option value="" {% if not session.therapist_name %}selected{% endif %}>Sin asignar</option>
+                                {% for therapist in therapists %}
+                                <option value="{{ therapist.name }}" {% if session.therapist_name == therapist.name %}selected{% endif %}>{{ therapist.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Enlace de videoconferencia (solo para sesiones online) -->
+                    <div class="mb-4" id="videoLinkContainer" style="display: {% if session.modality == 'online' %}block{% else %}none{% endif %};">
+                        <label for="video_link" class="form-label">Enlace de Videoconferencia</label>
+                        <div class="input-group">
+                            <input type="url" class="form-control" id="video_link" name="video_link" value="{{ session.video_link if session.video_link else '' }}" placeholder="https://zoom.us/j/...">
+                            <button class="btn btn-outline-secondary" type="button" onclick="generateVideoLink()">
+                                <i class="bi bi-magic"></i> Generar
+                            </button>
+                        </div>
+                        <div class="form-text">Enlace para la sesión online. Se enviará al paciente automáticamente.</div>
+                    </div>
+                    
+                    <!-- Notas -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3">{{ session.notes if session.notes else '' }}</textarea>
+                    </div>
+                    
+                    <!-- Estado -->
+                    <div class="mb-4">
+                        <label for="status" class="form-label">Estado</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="scheduled" {% if session.status == 'scheduled' %}selected{% endif %}>Programada</option>
+                            <option value="completed" {% if session.status == 'completed' %}selected{% endif %}>Completada</option>
+                            <option value="cancelled" {% if session.status == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Opciones adicionales -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="send_notification" name="send_notification">
+                            <label class="form-check-label" for="send_notification">
+                                Notificar al paciente sobre los cambios
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/sessions/{{ session.id }}'">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Información del paciente -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-person"></i> Información del Paciente
+            </div>
+            <div class="card-body">
+                <h5>{{ patient.name }}</h5>
+                <p class="text-muted">ID: {{ patient.id }}</p>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-telephone"></i> Teléfono</h6>
+                    <p class="format-phone">{{ patient.phone }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-envelope"></i> Email</h6>
+                    <p>{{ patient.email if patient.email else "No disponible" }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="bi bi-translate"></i> Idioma</h6>
+                    <p>
+                        {% if patient.language == "es" %}
+                        <span class="badge bg-info">Español</span>
+                        {% elif patient.language == "ca" %}
+                        <span class="badge bg-info">Catalán</span>
+                        {% elif patient.language == "en" %}
+                        <span class="badge bg-info">Inglés</span>
+                        {% elif patient.language == "ar" %}
+                        <span class="badge bg-info">Árabe</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ patient.language }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Información de ayuda -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i> Información
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Al modificar una sesión, considera si es necesario notificar al paciente sobre los cambios.
+                </div>
+                
+                <h5>Cambios de Estado</h5>
+                <ul>
+                    <li><strong>Programada:</strong> La sesión está pendiente de realizarse</li>
+                    <li><strong>Completada:</strong> La sesión ya se ha realizado</li>
+                    <li><strong>Cancelada:</strong> La sesión ha sido cancelada</li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-lightbulb"></i> Si necesitas cancelar la sesión, considera usar la opción específica de cancelación desde la vista de detalles para registrar el motivo.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleVideoLink() {
+        const modality = document.getElementById('modality').value;
+        const videoLinkContainer = document.getElementById('videoLinkContainer');
+        
+        if (modality === 'online') {
+            videoLinkContainer.style.display = 'block';
+        } else {
+            videoLinkContainer.style.display = 'none';
+        }
+    }
+    
+    function generateVideoLink() {
+        // En un entorno real, esto podría hacer una llamada a la API de Zoom o similar
+        const randomId = Math.floor(Math.random() * 1000000000);
+        const videoLink = `https://zoom.us/j/${randomId}`;
+        document.getElementById('video_link').value = videoLink;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatear teléfonos
+        document.querySelectorAll('.format-phone').forEach(function(element) {
+            let phone = element.textContent.trim();
+            if (phone && !phone.startsWith('+')) {
+                phone = '+34' + phone;
+            }
+            element.textContent = phone;
+        });
+        
+        // Validación del formulario
+        document.getElementById('editSessionForm').addEventListener('submit', function(event) {
+            const sessionType = document.getElementById('session_type').value;
+            const modality = document.getElementById('modality').value;
+            const sessionDate = document.getElementById('session_date').value;
+            const sessionTime = document.getElementById('session_time').value;
+            
+            if (!sessionType || !modality || !sessionDate || !sessionTime) {
+                event.preventDefault();
+                showToast('Por favor, completa todos los campos obligatorios', 'danger');
+            }
+            
+            // Confirmar si hay cambios significativos
+            const status = document.getElementById('status').value;
+            const originalStatus = '{{ session.status }}';
+            
+            if (status !== originalStatus) {
+                if (!confirm(`¿Estás seguro de que deseas cambiar el estado de la sesión a "${status}"?`)) {
+                    event.preventDefault();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 

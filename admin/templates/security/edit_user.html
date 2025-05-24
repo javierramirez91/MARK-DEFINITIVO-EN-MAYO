@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Usuario - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Editar Usuario</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/security/users">Usuarios</a></li>
+        <li class="breadcrumb-item active">Editar Usuario</li>
+    </ol>
+    
+    <div class="row">
+        <div class="col-xl-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-user-edit me-1"></i>
+                    Información del Usuario
+                </div>
+                <div class="card-body">
+                    <form action="/security/user/{{ user_data.id }}/update" method="post">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Nombre de Usuario</label>
+                                <input type="text" class="form-control" id="username" name="username" value="{{ user_data.username }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ user_data.email }}" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="full_name" class="form-label">Nombre Completo</label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" value="{{ user_data.full_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_login" class="form-label">Último Acceso</label>
+                                <input type="text" class="form-control" id="last_login" value="{{ user_data.last_login }}" disabled>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Roles</label>
+                                {% for role in available_roles %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ role.id }}" id="role_{{ role.id }}" name="roles" {% if role.id in user_data.roles %}checked{% endif %}>
+                                    <label class="form-check-label" for="role_{{ role.id }}">
+                                        {{ role.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="account_locked" name="account_locked" {% if user_data.account_locked %}checked{% endif %}>
+                                    <label class="form-check-label" for="account_locked">Cuenta Bloqueada</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="reset_password" name="reset_password">
+                                    <label class="form-check-label" for="reset_password">Restablecer Contraseña</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="passwordResetInfo" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Se enviará un email al usuario con instrucciones para restablecer su contraseña.
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="/security/users" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    Seguridad y Acceso
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Actividad Reciente</h5>
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Último acceso
+                            <span class="timestamp">{{ user_data.last_login }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Estado de la cuenta
+                            {% if user_data.account_locked %}
+                            <span class="badge bg-danger">Bloqueada</span>
+                            {% else %}
+                            <span class="badge bg-success">Activa</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Intentos de acceso fallidos
+                            <span>0</span>
+                        </li>
+                    </ul>
+                    
+                    <h5 class="card-title">Acciones Rápidas</h5>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-warning" id="lockUnlockBtn">
+                            {% if user_data.account_locked %}
+                            <i class="fas fa-unlock me-1"></i> Desbloquear Cuenta
+                            {% else %}
+                            <i class="fas fa-lock me-1"></i> Bloquear Cuenta
+                            {% endif %}
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="sendResetBtn">
+                            <i class="fas fa-key me-1"></i> Enviar Restablecimiento de Contraseña
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal">
+                            <i class="fas fa-trash me-1"></i> Eliminar Usuario
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-history me-1"></i>
+                    Historial de Cambios
+                </div>
+                <div class="card-body">
+                    <div class="timeline small">
+                        <div class="timeline-item">
+                            <div class="timeline-date">Hace 2 días</div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Actualización de roles</div>
+                                <div class="timeline-text">Se añadió el rol "therapist"</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Hace 5 días</div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Cambio de email</div>
+                                <div class="timeline-text">Email actualizado a {{ user_data.email }}</div>
+                            </div>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-date">Hace 30 días</div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Creación de cuenta</div>
+                                <div class="timeline-text">Usuario creado por admin</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para eliminar usuario -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar al usuario <strong>{{ user_data.username }}</strong>?</p>
+                <p class="text-danger">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="/security/user/{{ user_data.id }}/delete" method="post">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatear fechas
+        document.querySelectorAll('.timestamp').forEach(function(el) {
+            const timestamp = new Date(el.textContent.trim());
+            el.textContent = timestamp.toLocaleString('es-ES');
+        });
+        
+        // Mostrar/ocultar información de restablecimiento de contraseña
+        document.getElementById('reset_password').addEventListener('change', function() {
+            document.getElementById('passwordResetInfo').style.display = this.checked ? 'block' : 'none';
+        });
+        
+        // Bloquear/Desbloquear cuenta
+        document.getElementById('lockUnlockBtn').addEventListener('click', function() {
+            const isLocked = document.getElementById('account_locked').checked;
+            document.getElementById('account_locked').checked = !isLocked;
+            
+            // Actualizar texto del botón
+            this.innerHTML = !isLocked ? 
+                '<i class="fas fa-unlock me-1"></i> Desbloquear Cuenta' : 
+                '<i class="fas fa-lock me-1"></i> Bloquear Cuenta';
+                
+            alert(`La cuenta ha sido ${!isLocked ? 'bloqueada' : 'desbloqueada'}.`);
+        });
+        
+        // Enviar restablecimiento de contraseña
+        document.getElementById('sendResetBtn').addEventListener('click', function() {
+            document.getElementById('reset_password').checked = true;
+            document.getElementById('passwordResetInfo').style.display = 'block';
+            alert('Se enviará un email con instrucciones para restablecer la contraseña al guardar los cambios.');
+        });
+    });
+</script>
+
+<style>
+    .timeline {
+        position: relative;
+        padding: 0;
+        list-style: none;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 15px;
+        padding-left: 30px;
+    }
+    
+    .timeline-item:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #0d6efd;
+    }
+    
+    .timeline-item:after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 12px;
+        bottom: -15px;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+    
+    .timeline-item:last-child:after {
+        display: none;
+    }
+    
+    .timeline-date {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 2px;
+    }
+    
+    .timeline-title {
+        font-weight: bold;
+        margin-bottom: 2px;
+    }
+    
+    .timeline-text {
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %} 

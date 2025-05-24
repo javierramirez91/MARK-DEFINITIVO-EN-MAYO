@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Protección de Datos - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Protección de Datos</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item active">Protección de Datos</li>
+    </ol>
+    
+    <!-- Tarjetas de estadísticas -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Campos Encriptados</div>
+                            <div class="fs-4">{{ stats.total_encrypted_fields }}</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-lock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#encryptionSection">Ver Detalles</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Estado de Encriptación</div>
+                            <div class="fs-4">{{ stats.encryption_status }}</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-shield-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#encryptionSection">Ver Detalles</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Accesos a Datos Sensibles</div>
+                            <div class="fs-4">{{ stats.sensitive_data_access_count }}</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-eye fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#accessSection">Ver Detalles</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="small">Intentos Fallidos de Desencriptación</div>
+                            <div class="fs-4">{{ stats.failed_decryption_attempts }}</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-exclamation-triangle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#alertsSection">Ver Alertas</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Sección de Encriptación -->
+        <div class="col-xl-6">
+            <div class="card mb-4" id="encryptionSection">
+                <div class="card-header">
+                    <i class="fas fa-lock me-1"></i>
+                    Estado de Encriptación
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Configuración</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                            <span>Algoritmo:</span>
+                                            <span class="fw-bold">{{ stats.encryption_status }}</span>
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                            <span>Rotación de claves:</span>
+                                            <span class="fw-bold">Cada {{ stats.key_rotation_days }} días</span>
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                            <span>Última rotación:</span>
+                                            <span class="fw-bold timestamp">{{ stats.last_backup }}</span>
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                            <span>Retención de datos:</span>
+                                            <span class="fw-bold">{{ stats.data_retention_days }} días</span>
+                                        </li>
+                                    </ul>
+                                    <div class="d-grid gap-2 mt-3">
+                                        <a href="/security/encryption" class="btn btn-primary">
+                                            <i class="fas fa-cog me-1"></i> Gestionar Encriptación
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Campos Encriptados</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tabla</th>
+                                                    <th>Campo</th>
+                                                    <th>Registros</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for field in stats.encrypted_fields %}
+                                                <tr>
+                                                    <td>{{ field.table }}</td>
+                                                    <td>{{ field.field }}</td>
+                                                    <td>{{ field.count }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        La próxima rotación de claves está programada para el <strong>{{ (stats.last_backup|string)[:10] }}</strong>. Todos los datos sensibles están protegidos con encriptación AES-256.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sección de Copias de Seguridad -->
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-database me-1"></i>
+                    Copias de Seguridad y Recuperación
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Estado</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                            <span>Última copia:</span>
+                                            <span class="fw-bold timestamp">{{ stats.last_backup }}</span>
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                            <span>Tipo:</span>
+                                            <span class="fw-bold">Completa</span>
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                            <span>Estado:</span>
+                                            <span class="fw-bold text-success">Completada</span>
+                                        </li>
+                                        <li class="list-group-item bg-transparent d-flex justify-content-between">
+                                            <span>Próxima copia:</span>
+                                            <span class="fw-bold">Automática (diaria)</span>
+                                        </li>
+                                    </ul>
+                                    <div class="d-grid gap-2 mt-3">
+                                        <a href="/security/backup" class="btn btn-primary">
+                                            <i class="fas fa-download me-1"></i> Gestionar Copias
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Acciones Rápidas</h5>
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary">
+                                            <i class="fas fa-cloud-download-alt me-1"></i> Crear Copia Ahora
+                                        </button>
+                                        <button class="btn btn-outline-secondary">
+                                            <i class="fas fa-cloud-upload-alt me-1"></i> Restaurar Copia
+                                        </button>
+                                        <button class="btn btn-outline-danger">
+                                            <i class="fas fa-trash-alt me-1"></i> Purgar Datos Antiguos
+                                        </button>
+                                    </div>
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        La purga de datos eliminará permanentemente los registros más antiguos que el período de retención.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sección de Acceso a Datos Sensibles -->
+    <div class="card mb-4" id="accessSection">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-eye me-1"></i>
+                    Acceso a Datos Sensibles
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" id="exportAccessBtn">
+                        <i class="fas fa-file-export me-1"></i> Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha y Hora</th>
+                            <th>Usuario</th>
+                            <th>Tipo de Datos</th>
+                            <th>Acción</th>
+                            <th>Motivo</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for event in sensitive_data_events %}
+                        <tr>
+                            <td class="timestamp">{{ event.timestamp }}</td>
+                            <td>
+                                <span class="badge {% if event.user_id == 'admin' %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ event.user_id }}
+                                </span>
+                            </td>
+                            <td>{{ event.data_type }}</td>
+                            <td>
+                                <span class="badge {% if event.action == 'view' %}bg-info{% elif event.action == 'export' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ event.action }}
+                                </span>
+                            </td>
+                            <td>{{ event.reason }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-secondary view-details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            <nav aria-label="Paginación de eventos de acceso">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Sección de Alertas de Seguridad -->
+    <div class="card mb-4" id="alertsSection">
+        <div class="card-header">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            Alertas de Seguridad
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i> Intentos Fallidos de Desencriptación</h5>
+                <p>Se han detectado <strong>{{ stats.failed_decryption_attempts }}</strong> intentos fallidos de desencriptación en las últimas 24 horas. Esto podría indicar un intento de acceso no autorizado a datos sensibles.</p>
+                <hr>
+                <p class="mb-0">Recomendación: Revisar los registros de auditoría y considerar la rotación de claves de encriptación.</p>
+            </div>
+            
+            <div class="alert alert-warning">
+                <h5 class="alert-heading"><i class="fas fa-clock me-2"></i> Rotación de Claves Pendiente</h5>
+                <p>Han pasado <strong>15</strong> días desde la última rotación de claves. La política de seguridad recomienda rotar las claves cada 90 días.</p>
+                <hr>
+                <p class="mb-0">Recomendación: Programar la próxima rotación de claves para mantener la seguridad de los datos.</p>
+            </div>
+            
+            <div class="alert alert-info">
+                <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i> Cumplimiento Normativo</h5>
+                <p>El sistema cumple actualmente con las normativas de protección de datos (RGPD, HIPAA). La próxima auditoría de cumplimiento está programada para dentro de 45 días.</p>
+                <hr>
+                <p class="mb-0">Recomendación: Revisar las políticas de retención de datos y asegurarse de que todos los consentimientos de pacientes estén actualizados.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formatear fechas
+        document.querySelectorAll('.timestamp').forEach(function(el) {
+            const timestamp = new Date(el.textContent.trim());
+            el.textContent = timestamp.toLocaleString('es-ES');
+        });
+        
+        // Exportar registros (simulado)
+        document.getElementById('exportAccessBtn').addEventListener('click', function() {
+            alert('La exportación de registros de acceso a datos sensibles se iniciaría aquí en una implementación real.');
+        });
+        
+        // Ver detalles (simulado)
+        document.querySelectorAll('.view-details').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                alert('En una implementación real, aquí se mostraría un modal con los detalles completos del acceso a datos sensibles.');
+            });
+        });
+    });
+</script>
+{% endblock %}

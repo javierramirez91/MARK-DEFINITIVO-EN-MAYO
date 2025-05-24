@@ -1,0 +1,130 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+
+# Entornos virtuales
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# Base de datos local SQLite
+*.db
+*.sqlite3
+*.sqlite
+local_database.db
+
+# Registros
+*.log
+logs/
+
+# Archivos de configuración
+*.ini
+*.conf
+!sample-*.ini
+!sample-*.conf
+!pytest.ini
+
+# Archivos de respaldo
+*~
+*.bak
+*.swp
+
+# Cachés
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Configuración de IDEs y editores
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+.DS_Store
+Thumbs.db
+
+# Archivos de sesión
+.ipynb_checkpoints/
+# *.ipynb  # Comentado: descomenta si no necesitas versionar notebooks
+
+# Archivos de media
+media/
+*.mp3
+*.wav
+*.ogg
+*.mp4
+
+# Archivos de credenciales
+secrets/
+service-account.json
+*.pem
+*.key
+*.der
+*.p12
+google-credentials.json
+google-application-credentials.json
+config/*.json
+*.pub  # Agregado para claves públicas SSH
+id_*   # Agregado para claves privadas SSH (ej. id_rsa, id_ecdsa)
+
+# Archivos de configuración de entorno
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# ¡NUNCA SUBIR ESTOS ARCHIVOS!
+
+# Archivos de dependencias
+node_modules/
+# package-lock.json  # Comentado: descomenta si no usas npm
+# yarn.lock          # Comentado: descomenta si no usas yarn
+
+# Archivos de construcción
+dist/
+build/
+*.wrangler/
+
+# Archivos temporales
+tmp/
+temp/
+
+# Otros
+.coverage
+htmlcov/
+.tox/
+
+# Archivos locales de desarrollo
+local_settings.py
+dev_settings.py
+
+# LangSmith
+# ai/langsmith/client.py  # Comentado: evaluar si debe ser versionado
+
+# Servidor API principal para el asistente virtual Mark
+# main.py  # Comentado: este archivo debe estar en el repositorio
