@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional # ASEGURAR QUE Dict, List, etc. est
 from datetime import datetime, timezone, timedelta
 
 # Importaciones necesarias para el manejo de errores de Supabase v2.x
-from supabase.lib.client_options import PostgrestAPIError, GotrueAPIError # Asegúrate que esta ruta es correcta para tu versión
+from supabase.lib.errors import PostgrestAPIError, GotrueAPIError # Importación correcta para supabase-py v2.x
 import httpx # Para errores de red
 
 from database.supabase_client import SupabaseClient 
