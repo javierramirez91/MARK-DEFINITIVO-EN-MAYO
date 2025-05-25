@@ -1,1 +1,2 @@
-web: gunicorn -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT --workers 2 
+web: python main.py
+admin: python -m uvicorn admin.admin_panel:app --host 0.0.0.0 --port $PORT 

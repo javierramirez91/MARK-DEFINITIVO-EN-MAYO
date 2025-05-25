@@ -49,42 +49,47 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD_HASH: Optional[str] = None 
 
     # WhatsApp / Meta
-    WHATSAPP_VERIFY_TOKEN: str # ¡Obligatoria!
-    WHATSAPP_ACCESS_TOKEN: str # ¡Obligatoria!
-    WHATSAPP_PHONE_NUMBER_ID: str # ¡Obligatoria!
+    WHATSAPP_VERIFY_TOKEN: Optional[str] = None # Hacer opcional para desarrollo
+    WHATSAPP_ACCESS_TOKEN: Optional[str] = None # Hacer opcional para desarrollo
+    WHATSAPP_TOKEN: Optional[str] = None # Alias para WHATSAPP_ACCESS_TOKEN
+    WHATSAPP_PHONE_NUMBER_ID: Optional[str] = None # Hacer opcional para desarrollo
     WHATSAPP_APP_SECRET: Optional[str] = None # Opcional pero recomendada
 
     # OpenRouter / AI Model
-    OPENROUTER_API_KEY: str # ¡Obligatoria!
-    OPENROUTER_MODEL: str # ¡Obligatoria! Modelo a usar (ej: "google/gemma-2-9b-it")
+    OPENROUTER_API_KEY: Optional[str] = None # Hacer opcional para desarrollo
+    OPENROUTER_MODEL: Optional[str] = None # Hacer opcional para desarrollo
     OPENROUTER_TIMEOUT: float = 60.0 # Timeout para llamadas a la API
     OPENROUTER_HTTP_REFERER: Optional[str] = None # Opcional: URL de tu sitio
 
     # Stripe
-    STRIPE_API_KEY: str # ¡Obligatoria!
-    STRIPE_WEBHOOK_SECRET: str # ¡Obligatoria!
-    STRIPE_PRICE_ID_STANDARD: str # ¡Obligatoria!
-    STRIPE_PRICE_ID_REDUCIDA: str # ¡Obligatoria!
-    STRIPE_PRICE_ID_PAREJA: str # ¡Obligatoria!
-    STRIPE_PRICE_ID_CANCELLATION: str # ¡Obligatoria! ID de precio para cargos por cancelación
-    STRIPE_LINK_SUCCESS: str # ¡Obligatoria! URL de redirección tras pago exitoso
-    STRIPE_LINK_CANCEL: str # ¡Obligatoria! URL de redirección tras pago cancelado
+    STRIPE_API_KEY: Optional[str] = None # Hacer opcional para desarrollo
+    STRIPE_SECRET_KEY: Optional[str] = None # Alias para STRIPE_API_KEY
+    STRIPE_WEBHOOK_SECRET: Optional[str] = None # Hacer opcional para desarrollo
+    STRIPE_PRICE_ID_STANDARD: Optional[str] = None # Hacer opcional para desarrollo
+    STRIPE_PRICE_ID_REDUCIDA: Optional[str] = None # Hacer opcional para desarrollo
+    STRIPE_PRICE_ID_PAREJA: Optional[str] = None # Hacer opcional para desarrollo
+    STRIPE_PRICE_ID_CANCELLATION: Optional[str] = None # Hacer opcional para desarrollo
+    STRIPE_LINK_SUCCESS: Optional[str] = None # Hacer opcional para desarrollo
+    STRIPE_LINK_CANCEL: Optional[str] = None # Hacer opcional para desarrollo
 
     # Supabase / Database
-    SUPABASE_URL: str # ¡Obligatoria!
-    SUPABASE_KEY: str # ¡Obligatoria! (Anon key)
-    SUPABASE_SERVICE_KEY: str # ¡Obligatoria! (Service role key)
+    SUPABASE_URL: Optional[str] = None # Hacer opcional para desarrollo
+    SUPABASE_KEY: Optional[str] = None # Hacer opcional para desarrollo
+    SUPABASE_SERVICE_KEY: Optional[str] = None # Hacer opcional para desarrollo
     DATABASE_URL: Optional[str] = None
 
     # Calendly
     CALENDLY_API_KEY: Optional[str] = None
+    CALENDLY_ACCESS_TOKEN: Optional[str] = None # Alias para CALENDLY_API_KEY
     CALENDLY_USER_URI: Optional[str] = None
     CALENDLY_WEBHOOK_URL: Optional[str] = None
 
     # Zoom (Server-to-Server OAuth)
     ZOOM_ACCOUNT_ID: Optional[str] = None
     ZOOM_S2S_CLIENT_ID: Optional[str] = None
+    ZOOM_CLIENT_ID: Optional[str] = None # Alias para ZOOM_S2S_CLIENT_ID
     ZOOM_S2S_CLIENT_SECRET: Optional[str] = None
+    ZOOM_CLIENT_SECRET: Optional[str] = None # Alias para ZOOM_S2S_CLIENT_SECRET
 
     # Contacto Emergencia
     EMERGENCY_CONTACT: Optional[str] = None # Número WhatsApp para notificaciones
@@ -155,12 +160,13 @@ class Settings(BaseSettings):
 try:
     settings = Settings()
     # Configurar Stripe globalmente después de cargar settings
-    if settings.STRIPE_API_KEY:
+    stripe_key = settings.STRIPE_SECRET_KEY or settings.STRIPE_API_KEY
+    if stripe_key:
         import stripe
-        stripe.api_key = settings.STRIPE_API_KEY
+        stripe.api_key = stripe_key
         logger.info("API key de Stripe configurada correctamente.")
     else:
-        logger.warning("STRIPE_API_KEY no encontrada en la configuración.")
+        logger.warning("STRIPE_SECRET_KEY/STRIPE_API_KEY no encontrada en la configuración.")
 
 except ValidationError as e:
     # Captura errores de validación específicos de Pydantic

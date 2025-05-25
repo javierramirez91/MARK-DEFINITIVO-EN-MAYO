@@ -302,7 +302,8 @@ async def root():
 if __name__ == "__main__":
     # Obtener configuración del servidor
     host = settings.HOST
-    port = settings.PORT
+    # Usar PORT de Render si está disponible, sino usar el configurado
+    port = int(os.environ.get("PORT", settings.PORT))
     
     # Iniciar servidor
     uvicorn.run(
