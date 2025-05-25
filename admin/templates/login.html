@@ -3,155 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mark Admin - Iniciar Sesión</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Login - Mark Admin Panel</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            background-color: #f8f9fa;
-            height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: sans-serif;
         }
+        
         .login-container {
-            max-width: 400px;
+            background: white;
             padding: 2rem;
-            background-color: white;
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
         }
-        .logo {
+        
+        .login-header {
             text-align: center;
-            margin-bottom: 1.5rem; /* Reducido un poco el margen */
+            margin-bottom: 2rem;
         }
-        .logo h1 {
-            color: #4a6baf;
-            font-weight: bold;
-            font-size: 1.8rem; /* Ajustado el tamaño */
+        
+        .login-header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
         }
-        .btn-primary {
-            background-color: #4a6baf;
-            border-color: #4a6baf;
-            width: 100%; /* Botón más ancho */
+        
+        .login-header p {
+            color: #666;
+            font-size: 0.9rem;
         }
-        .btn-primary:hover {
-            background-color: #3e5a95;
-            border-color: #3e5a95;
+        
+        .form-group {
+            margin-bottom: 1.5rem;
         }
-        .form-label {
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
             font-weight: 500;
         }
-        .form-control:focus {
-            border-color: #8ab4f8;
-            box-shadow: 0 0 0 0.25rem rgba(74, 107, 175, 0.25);
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
         }
-        #error-message-div {
-            color: #dc3545; /* Color de error de Bootstrap */
-            margin-top: 10px;
-            margin-bottom: 10px; /* Espacio antes del formulario si hay error */
-            display: none; /* Oculto por defecto */
-            text-align: center;
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 5px;
+            font-size: 1rem;
             font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .demo-info {
+            background: #f0f8ff;
+            color: #0066cc;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        .demo-info strong {
+            display: block;
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="logo">
-            <h1>Mark Admin</h1>
+        <div class="login-header">
+            <h1>Mark Admin Panel</h1>
+            <p>Acceso al panel de administración</p>
         </div>
-        <p class="text-center mb-4">Panel de Administración</p>
-
-        <div id="error-message-div"></div>
-
+        
+        <div id="error-container" style="display: none;"></div>
+        
         <form id="loginForm">
-            <div class="mb-3">
-                <label for="username" class="form-label">Usuario</label>
-                <input type="text" class="form-control" id="username" name="username" required value="admin">
+            <div class="form-group">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" name="username" required>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Contraseña</label>
-                <input type="password" class="form-control" id="password" name="password" required value="changeme123">
+            
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+            
+            <button type="submit" class="login-btn" id="loginBtn">
+                Iniciar Sesión
+            </button>
         </form>
+        
+        <div class="demo-info">
+            <strong>Credenciales de prueba:</strong>
+            Usuario: admin<br>
+            Contraseña: admin123
+        </div>
     </div>
-
-<script>
-const loginForm = document.getElementById('loginForm');
-const errorMessageDiv = document.getElementById('error-message-div');
-
-if (loginForm) {
-    loginForm.addEventListener('submit', async function(event) {
-        event.preventDefault(); // Evita el envío tradicional del formulario
-
-        const username = event.target.username.value;
-        const password = event.target.password.value;
-
-        // Crear el cuerpo de la solicitud como URLSearchParams para que FastAPI lo entienda
-        // como form data para OAuth2PasswordRequestForm.
-        const formData = new URLSearchParams();
-        formData.append('username', username);
-        formData.append('password', password);
-
-        if (errorMessageDiv) errorMessageDiv.style.display = 'none'; // Ocultar error previo
-
-        try {
-            const response = await fetch('/token', { // El endpoint de tu backend para obtener el token
-                method: 'POST',
-                body: formData // FastAPI espera 'application/x-www-form-urlencoded' para OAuth2PasswordRequestForm
-            });
-
-            const responseData = await response.json(); // Intenta parsear la respuesta como JSON
-
-            if (response.ok && responseData.access_token) {
-                console.log('Token recibido:', responseData.access_token);
-                localStorage.setItem('accessToken', responseData.access_token); // Guardar token en localStorage
-                localStorage.setItem('tokenType', responseData.token_type || 'bearer');
-
-                // Opción 1: Redirigir y que /dashboard use JavaScript para cargar datos con el token
-                // window.location.href = '/dashboard'; 
-                // Si haces esto, /dashboard NECESITA tener JavaScript que:
-                // 1. Al cargarse, intente leer el token de localStorage.
-                // 2. Si no hay token, redirija a /.
-                // 3. Para CUALQUIER dato que necesite cargar (ej. /api/stats/), use fetch CON la cabecera Authorization.
-
-                // Opción 2: (LA QUE USAREMOS PARA LA PRÓXIMA PRUEBA, LUEGO CAMBIAMOS A CABECERA)
-                // Redirigir a /dashboard CON EL TOKEN EN LA URL (PARA PRUEBA INICIAL)
-                // ESTO ES SOLO PARA VERIFICAR QUE EL TOKEN LLEGA AL BACKEND EN GET_CURRENT_USER_WITH_ROLES
-                // LUEGO LO CAMBIAREMOS POR EL MÉTODO DE CABECERA AUTHORIZATION.
-                console.log('Redirigiendo a /dashboard con token en URL para prueba...');
-                window.location.href = `/dashboard?token=${encodeURIComponent(responseData.access_token)}`;
-
-            } else {
-                console.error("Error de login o token no recibido:", responseData);
-                if (errorMessageDiv) {
-                    errorMessageDiv.innerText = responseData.detail || "Usuario o contraseña incorrectos, o error del servidor.";
-                    errorMessageDiv.style.display = 'block';
+    
+    <script>
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+            errorContainer.style.display = 'block';
+        }
+        
+        function hideError() {
+            document.getElementById('error-container').style.display = 'none';
+        }
+        
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideError();
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showError('Por favor, ingresa usuario y contraseña');
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Iniciando sesión...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+                
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.access_token) {
+                    // Guardar token en localStorage
+                    localStorage.setItem('access_token', data.access_token);
+                    
+                    // Redirigir al dashboard
+                    window.location.href = '/dashboard';
+                } else {
+                    showError(data.detail || 'Error de autenticación');
+                }
+            } catch (error) {
+                console.error('Error de login:', error);
+                showError('Error de conexión. Inténtalo de nuevo.');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Iniciar Sesión';
+            }
+        });
+        
+        // Verificar si ya hay un token válido
+        window.addEventListener('load', async function() {
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                try {
+                    const response = await fetch('/api/users/me', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        // Token válido, redirigir al dashboard
+                        window.location.href = '/dashboard';
+                    } else {
+                        // Token inválido, eliminarlo
+                        localStorage.removeItem('access_token');
+                    }
+                } catch (error) {
+                    // Error de conexión, eliminar token
+                    localStorage.removeItem('access_token');
                 }
             }
-        } catch (error) {
-            console.error("Error en la solicitud de fetch a /token:", error);
-            if (errorMessageDiv) {
-                errorMessageDiv.innerText = "Error de red o al procesar la solicitud. Verifique la consola del backend.";
-                errorMessageDiv.style.display = 'block';
-            }
-        }
-    });
-}
-
-// Opcional: ocultar mensaje de error al empezar a escribir en los campos
-const usernameInput = document.querySelector('input[name="username"]');
-const passwordInput = document.querySelector('input[name="password"]');
-
-if (usernameInput && errorMessageDiv) {
-    usernameInput.addEventListener('input', () => { if(errorMessageDiv && errorMessageDiv.style.display !== 'none') errorMessageDiv.style.display = 'none'; });
-}
-if (passwordInput && errorMessageDiv) {
-    passwordInput.addEventListener('input', () => { if(errorMessageDiv && errorMessageDiv.style.display !== 'none') errorMessageDiv.style.display = 'none'; });
-}
-</script>
-
+        });
+    </script>
 </body>
 </html>

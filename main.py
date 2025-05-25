@@ -23,6 +23,7 @@ import uvicorn
 from fastapi import FastAPI # , Request, Depends, HTTPException, BackgroundTasks # No usados directamente
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 # from fastapi.responses import JSONResponse # No usado
 
 from core.config import settings, logger, verify_config
@@ -195,6 +196,107 @@ async def health_check() -> dict:
         "timestamp": datetime.utcnow().isoformat(),
         "version": app.version
     }
+
+# Página de bienvenida
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    """
+    Página de bienvenida con información sobre la API
+    """
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mark - Asistente Virtual</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
+            .container {
+                text-align: center;
+                padding: 2rem;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 20px;
+                backdrop-filter: blur(10px);
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                max-width: 600px;
+            }
+            h1 {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            }
+            .subtitle {
+                font-size: 1.2rem;
+                margin-bottom: 2rem;
+                opacity: 0.9;
+            }
+            .links {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-top: 2rem;
+            }
+            .link {
+                background: rgba(255, 255, 255, 0.2);
+                color: white;
+                text-decoration: none;
+                padding: 0.8rem 1.5rem;
+                border-radius: 10px;
+                transition: all 0.3s ease;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            .link:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            }
+            .status {
+                margin-top: 2rem;
+                padding: 1rem;
+                background: rgba(0, 255, 0, 0.2);
+                border-radius: 10px;
+                font-size: 0.9rem;
+            }
+            .version {
+                margin-top: 1rem;
+                opacity: 0.7;
+                font-size: 0.9rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🤖 Mark</h1>
+            <p class="subtitle">Asistente Virtual del Centre de Psicologia Jaume I</p>
+            
+            <div class="status">
+                ✅ API funcionando correctamente
+            </div>
+            
+            <div class="links">
+                <a href="/docs" class="link">📚 Documentación Interactiva</a>
+                <a href="/redoc" class="link">📖 Documentación ReDoc</a>
+                <a href="/health" class="link">🏥 Estado del Sistema</a>
+            </div>
+            
+            <p class="version">Versión 1.0.0</p>
+        </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 # Punto de entrada para ejecución directa
 if __name__ == "__main__":

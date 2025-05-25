@@ -7,8 +7,9 @@ import json
 from typing import Dict, List, Any, Optional # ASEGURAR QUE Dict, List, etc. están importados
 from datetime import datetime, timezone, timedelta
 
-# Importaciones necesarias para el manejo de errores de Supabase v2.x
-from supabase.exceptions import PostgrestAPIError, GotrueAPIError # ¡Esta es la importación correcta para supabase-py v2.15.1!
+# Importaciones necesarias para el manejo de errores
+from supabase import PostgrestAPIError  # Para errores de PostgREST
+from gotrue.errors import AuthApiError  # Para errores de autenticación
 import httpx # Para errores de red
 
 from database.supabase_client import SupabaseClient 
@@ -96,8 +97,8 @@ async def get_user_by_username(username: str) -> Dict[str, Any]:
     try:
         await supabase._ensure_initialized()
         search_username = username.lower()
-        # Supabase-py v2: .execute() devuelve APIResponse
-        api_response = await supabase.client.from_(table_name).select("*").eq('username', search_username).limit(1).execute()
+        # Usar admin_client para operaciones de usuario que pueden requerir permisos elevados
+        api_response = supabase.admin_client.from_(table_name).select("*").eq('username', search_username).limit(1).execute()
         
         # Verificar errores lógicos en la respuesta JSON
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
@@ -107,7 +108,7 @@ async def get_user_by_username(username: str) -> Dict[str, Any]:
         processed = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="user")
         return {"success": processed["success"], "user": processed.get("user"), "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "user": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -123,7 +124,7 @@ async def get_user_by_id(user_id: str) -> Dict[str, Any]:
     table_name = TABLE_USUARIOS
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").eq('id', user_id).limit(1).execute()
+        api_response = supabase.admin_client.from_(table_name).select("*").eq('id', user_id).limit(1).execute()
 
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -133,7 +134,7 @@ async def get_user_by_id(user_id: str) -> Dict[str, Any]:
             processed["user"].pop('hashed_password', None)
         return {"success": processed["success"], "user": processed.get("user"), "error": processed.get("error")}
         
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "user": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -159,14 +160,14 @@ async def update_user_auth_status(username: str, updates: Dict[str, Any]) -> Dic
     try:
         await supabase._ensure_initialized()
         search_username = username.lower()
-        api_response = await supabase.client.from_(table_name).update(allowed_updates).eq('username', search_username).execute()
+        api_response = supabase.admin_client.from_(table_name).update(allowed_updates).eq('username', search_username).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
 
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_plural="updated_users")
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -182,9 +183,10 @@ async def get_all_db_users(limit: int = 100, offset: int = 0) -> Dict[str, Any]:
     logger.info(f"Consultando todos los usuarios DB ({operation_name}).")
     try:
         await supabase._ensure_initialized()
+        # Usar el cliente de servicio para listar usuarios (puede requerir permisos elevados)
         # Nota: count='exact' no es un parámetro directo de select en supabase-py v2, 
         # se maneja con .execute(count=CountMethod.exact) o se obtiene de api_response.count
-        api_response = await supabase.client.from_(table_name).select(
+        api_response = supabase.admin_client.from_(table_name).select(
             "id, username, email, full_name, roles, is_active, is_locked, last_login, created_at, updated_at"
         ).limit(limit).offset(offset).order("username").execute() # Removido count='exact' de select
 
@@ -197,7 +199,7 @@ async def get_all_db_users(limit: int = 100, offset: int = 0) -> Dict[str, Any]:
         # Aquí, asumiremos que el conteo es la longitud de los datos si no se especifica `count` en execute.
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_plural="users")
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "users": [], "total": 0, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -222,7 +224,8 @@ async def create_db_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).insert(user_data).execute()
+        # Usar el cliente de servicio para operaciones de usuario que requieren permisos elevados
+        api_response = supabase.admin_client.from_(table_name).insert(user_data).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             # Este caso es menos común para insert si hay un error a nivel de DB, usualmente PostgrestAPIError se lanzaría.
@@ -236,7 +239,7 @@ async def create_db_user(user_data: Dict[str, Any]) -> Dict[str, Any]:
 
         return {"success": processed["success"], "user": new_user, "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e: # Errores comunes: duplicados (username, email), etc.
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "user": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -260,7 +263,8 @@ async def update_db_user(user_id: str, update_data: Dict[str, Any]) -> Dict[str,
 
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).update(update_data).eq("id", user_id).execute()
+        # Usar el cliente de servicio para operaciones de usuario que requieren permisos elevados
+        api_response = supabase.admin_client.from_(table_name).update(update_data).eq("id", user_id).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -272,7 +276,7 @@ async def update_db_user(user_id: str, update_data: Dict[str, Any]) -> Dict[str,
 
         return {"success": processed["success"], "user": updated_user, "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {user_id}: {e.message}", exc_info=True)
         return {"success": False, "user": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -288,7 +292,8 @@ async def delete_db_user(user_id: str) -> Dict[str, Any]:
     logger.info(f"Eliminando usuario DB ID ({operation_name}): {user_id}")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).delete().eq('id', user_id).execute()
+        # Usar el cliente de servicio para operaciones de usuario que requieren permisos elevados
+        api_response = supabase.admin_client.from_(table_name).delete().eq('id', user_id).execute()
         
         # Delete puede devolver datos si se usa `returning` o si la PK no existe (devuelve lista vacía).
         # Si hay un error de DB (ej. foreign key constraint), PostgrestAPIError se lanzaría.
@@ -299,7 +304,7 @@ async def delete_db_user(user_id: str) -> Dict[str, Any]:
         # _handle_supabase_response lo tratará como "sin datos de retorno específicos"
         return await _handle_supabase_response(api_response.data, operation_name, table_name)
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {user_id}: {e.message}", exc_info=True)
         return {"success": False, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -316,14 +321,14 @@ async def get_all_patients(limit=1000, offset=0, sort_by="name", order="asc") ->
     logger.info(f"Consultando tabla '{table_name}', sort_by={sort_by}, order={order}.")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1).execute()
+        api_response = supabase.client.from_(table_name).select("*").order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
             
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_plural="results") # Debería ser "patients" o "results" consistentemente
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "results": [], "total": 0, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -339,7 +344,7 @@ async def get_patient_by_id(patient_id: str) -> Dict[str, Any]:
     table_name = TABLE_PACIENTES
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").eq('id', patient_id).limit(1).execute()
+        api_response = supabase.client.from_(table_name).select("*").eq('id', patient_id).limit(1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -347,7 +352,7 @@ async def get_patient_by_id(patient_id: str) -> Dict[str, Any]:
         processed_response = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="patient")
         return {"success": processed_response["success"], "patient": processed_response.get("patient"), "error": processed_response.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para '{patient_id}': {e.message}", exc_info=True)
         return {"success": False, "patient": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -370,7 +375,7 @@ async def get_patient_by_phone(phone: str) -> Dict[str, Any]:
         if not normalized_phone:
             return {"success": False, "patient": None, "error": "Número de teléfono normalizado inválido"}
 
-        api_response = await supabase.client.from_(table_name).select("*").like('telefono', f'%{normalized_phone}%').limit(1).execute()
+        api_response = supabase.client.from_(table_name).select("*").like('telefono', f'%{normalized_phone}%').limit(1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -378,7 +383,7 @@ async def get_patient_by_phone(phone: str) -> Dict[str, Any]:
         processed = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="patient")
         return {"success": processed["success"], "patient": processed.get("patient"), "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para '{phone}': {e.message}", exc_info=True)
         return {"success": False, "patient": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -394,7 +399,7 @@ async def get_patient_by_email(email: str) -> Dict[str, Any]:
     table_name = TABLE_PACIENTES
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").eq('email', email.lower()).limit(1).execute()
+        api_response = supabase.client.from_(table_name).select("*").eq('email', email.lower()).limit(1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -402,7 +407,7 @@ async def get_patient_by_email(email: str) -> Dict[str, Any]:
         processed = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="patient")
         return {"success": processed["success"], "patient": processed.get("patient"), "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para '{email}': {e.message}", exc_info=True)
         return {"success": False, "patient": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -421,7 +426,7 @@ async def insert_patient(name: str, phone: str, email: Optional[str] = None, lan
         normalized_phone = ''.join(filter(str.isdigit, phone))
         patient_data = {"name": name, "phone": normalized_phone, "language": language, "metadata": metadata or {}, "email": email.lower() if email else None, "assigned_therapist_id": assigned_therapist_id}
         
-        api_response = await supabase.client.from_(table_name).insert(patient_data).execute()
+        api_response = supabase.client.from_(table_name).insert(patient_data).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -432,7 +437,7 @@ async def insert_patient(name: str, phone: str, email: Optional[str] = None, lan
         
         return {"success": processed["success"], "id": patient_id, "patient": patient_obj, "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name}: {e.message}", exc_info=True)
         return {"success": False, "id": None, "patient":None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -454,7 +459,7 @@ async def update_patient(patient_id: str, update_data: Dict[str, Any]) -> Dict[s
 
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).update(update_data).eq('id', patient_id).execute()
+        api_response = supabase.client.from_(table_name).update(update_data).eq('id', patient_id).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -462,7 +467,7 @@ async def update_patient(patient_id: str, update_data: Dict[str, Any]) -> Dict[s
         processed = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="patient")
         return {"success": processed["success"], "patient": processed.get("patient"), "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {patient_id}: {e.message}", exc_info=True)
         return {"success": False, "patient": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -478,14 +483,14 @@ async def delete_patient(patient_id: str) -> Dict[str, Any]:
     logger.info(f"Eliminando paciente ID ({operation_name}): {patient_id}")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).delete().eq('id', patient_id).execute()
+        api_response = supabase.client.from_(table_name).delete().eq('id', patient_id).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
             
         return await _handle_supabase_response(api_response.data, operation_name, table_name)
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {patient_id}: {e.message}", exc_info=True)
         return {"success": False, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -502,14 +507,14 @@ async def get_all_appointments(limit=1000, offset=0, sort_by="scheduled_date", o
     logger.info(f"Consultando tabla '{table_name}', sort_by={sort_by}, order={order}.")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1).execute()
+        api_response = supabase.client.from_(table_name).select("*").order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1).execute()
 
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
             
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_plural="appointments")
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "appointments": [], "total": 0, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -532,7 +537,7 @@ async def insert_appointment_record(appointment_data: Dict[str, Any]) -> Dict[st
 
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).insert(appointment_data).execute()
+        api_response = supabase.client.from_(table_name).insert(appointment_data).execute()
 
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -543,7 +548,7 @@ async def insert_appointment_record(appointment_data: Dict[str, Any]) -> Dict[st
 
         return {"success": processed["success"], "id": appointment_id, "appointment": appointment_obj, "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name}: {e.message}", exc_info=True)
         return {"success": False, "id": None, "appointment": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -559,7 +564,7 @@ async def get_appointment_by_id(appointment_id: str) -> Dict[str, Any]:
     table_name = TABLE_APPOINTMENTS
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").eq('id', appointment_id).limit(1).execute()
+        api_response = supabase.client.from_(table_name).select("*").eq('id', appointment_id).limit(1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -567,7 +572,7 @@ async def get_appointment_by_id(appointment_id: str) -> Dict[str, Any]:
         processed = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="appointment")
         return {"success": processed["success"], "appointment": processed.get("appointment"), "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {appointment_id}: {e.message}", exc_info=True)
         return {"success": False, "appointment": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -584,7 +589,7 @@ async def update_appointment_record(appointment_id: str, update_data: Dict[str, 
     update_data.pop('id', None)
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).update(update_data).eq('id', appointment_id).execute()
+        api_response = supabase.client.from_(table_name).update(update_data).eq('id', appointment_id).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -592,7 +597,7 @@ async def update_appointment_record(appointment_id: str, update_data: Dict[str, 
         processed = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="appointment")
         return {"success": processed["success"], "appointment": processed.get("appointment"), "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {appointment_id}: {e.message}", exc_info=True)
         return {"success": False, "appointment": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -608,14 +613,14 @@ async def delete_appointment_record(appointment_id: str) -> Dict[str, Any]:
     logger.info(f"Eliminando cita ID ({operation_name}): {appointment_id}")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).delete().eq('id', appointment_id).execute()
+        api_response = supabase.client.from_(table_name).delete().eq('id', appointment_id).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
             
         return await _handle_supabase_response(api_response.data, operation_name, table_name)
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {appointment_id}: {e.message}", exc_info=True)
         return {"success": False, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -632,14 +637,14 @@ async def get_all_notifications(limit: int = 1000, offset: int = 0, sort_by="cre
     logger.info(f"Consultando tabla '{table_name}', sort_by={sort_by}, order={order}.")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1).execute()
+        api_response = supabase.client.from_(table_name).select("*").order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
             
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_plural="notifications")
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "notifications": [], "total": 0, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -655,14 +660,14 @@ async def get_pending_notifications(limit: int = 10, table_name: str = TABLE_NOT
     logger.info(f"Consultando notificaciones pendientes en tabla '{table_name}'.")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").eq("status", "pendiente").order("created_at", desc=False).limit(limit).execute()
+        api_response = supabase.client.from_(table_name).select("*").eq("status", "pendiente").order("created_at", desc=False).limit(limit).execute()
 
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
 
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_plural="notifications")
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error específico de Supabase API en {operation_name}: {e.message}", exc_info=True)
         return {"success": False, "notifications": [], "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e: 
@@ -682,14 +687,14 @@ async def update_notification_status(notification_id: str, status: str, metadata
         
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).update(update_payload).eq("id", notification_id).execute()
+        api_response = supabase.client.from_(table_name).update(update_payload).eq("id", notification_id).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
 
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="notification")
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {notification_id}: {e.message}", exc_info=True)
         return {"success": False, "notification": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -714,7 +719,7 @@ async def insert_notification(patient_id: str, message: str, channel: str = "wha
         
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).insert(notification_data).execute()
+        api_response = supabase.client.from_(table_name).insert(notification_data).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -725,7 +730,7 @@ async def insert_notification(patient_id: str, message: str, channel: str = "wha
         
         return {"success": processed["success"], "id": notification_id, "notification": notification_obj, "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name}: {e.message}", exc_info=True)
         return {"success": False, "id": None, "notification": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -745,7 +750,7 @@ async def get_system_config(key: str) -> Dict[str, Any]:
         
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("value").eq('key', key).limit(1).execute()
+        api_response = supabase.client.from_(table_name).select("value").eq('key', key).limit(1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -761,7 +766,7 @@ async def get_system_config(key: str) -> Dict[str, Any]:
 
         return {"success": processed["success"], "config_value": processed.get("config_value"), "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para clave '{key}': {e.message}", exc_info=True)
         return {"success": False, "config_value": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -783,11 +788,11 @@ async def set_system_config(key: str, value: Any) -> Dict[str, Any]:
     try:
         await supabase._ensure_initialized()
         # Upsert para crear o actualizar la configuración
-        api_response = await supabase.client.from_(table_name).upsert(config_data).execute()
+        api_response = supabase.client.from_(table_name).upsert(config_data).execute()
         
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="config_entry")
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para clave '{key}': {e.message}", exc_info=True)
         return {"success": False, "config_entry": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -803,14 +808,14 @@ async def get_all_configs(limit: int = 100, offset: int = 0) -> Dict[str, Any]:
     logger.info(f"Consultando todas las configuraciones del sistema ({operation_name}).")
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").limit(limit).offset(offset).order("key").execute()
+        api_response = supabase.client.from_(table_name).select("*").limit(limit).offset(offset).order("key").execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
             
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_plural="configs")
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
         return {"success": False, "configs": [], "total": 0, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -835,7 +840,7 @@ async def insert_audit_log(user_id: str, action: str, resource_type: Optional[st
     try:
         await supabase._ensure_initialized()
         # Usar service_role para insertar logs, ya que puede ser llamado por el sistema o usuarios autenticados.
-        api_response = await supabase.client.from_(table_name).insert(log_data).execute() 
+        api_response = supabase.client.from_(table_name).insert(log_data).execute() 
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -843,7 +848,7 @@ async def insert_audit_log(user_id: str, action: str, resource_type: Optional[st
         processed = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="log_entry")
         return {"success": processed["success"], "id": processed.get("log_entry", {}).get("id") if processed.get("log_entry") else None, "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e: # Manejar errores de API
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name}: {e.message}", exc_info=True)
         return {"success": False, "id": None, "log_entry": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e: # Manejar errores de red
@@ -863,7 +868,7 @@ async def get_session_data(session_id: str) -> Optional[Dict[str, Any]]:
         
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("data").eq('session_id', session_id).limit(1).execute()
+        api_response = supabase.client.from_(table_name).select("data").eq('session_id', session_id).limit(1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data) # Loguea el error
@@ -873,7 +878,7 @@ async def get_session_data(session_id: str) -> Optional[Dict[str, Any]]:
             return api_response.data[0].get('data') # Asume que 'data' es la columna con el JSON
         return None
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {session_id}: {e.message}", exc_info=True)
         return None
     except httpx.RequestError as e:
@@ -897,7 +902,7 @@ async def save_session_data(session_id: str, data: Dict[str, Any]) -> bool:
     try:
         await supabase._ensure_initialized()
         # Upsert para crear o actualizar la sesión de conversación
-        api_response = await supabase.client.from_(table_name).upsert(session_payload, on_conflict="session_id").execute()
+        api_response = supabase.client.from_(table_name).upsert(session_payload, on_conflict="session_id").execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data) # Loguea el error
@@ -907,7 +912,7 @@ async def save_session_data(session_id: str, data: Dict[str, Any]) -> bool:
         # Aquí simplemente devolvemos True si no hubo excepción y no error lógico.
         return True
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para ID {session_id}: {e.message}", exc_info=True)
         return False
     except httpx.RequestError as e:
@@ -935,7 +940,7 @@ async def delete_expired_sessions(ttl_seconds: int) -> int:
         
         # Aquí optamos por borrar y no obtener el conteo de filas borradas directamente de la respuesta de delete.
         # Si necesitas el conteo, tendrás que hacer un SELECT count(*) antes y después si es crítico.
-        api_response = await supabase.client.from_(table_name).delete().lt('updated_at', expiration_time.isoformat()).execute()
+        api_response = supabase.client.from_(table_name).delete().lt('updated_at', expiration_time.isoformat()).execute()
 
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data) # Loguea el error
@@ -948,7 +953,7 @@ async def delete_expired_sessions(ttl_seconds: int) -> int:
         logger.info(f"{operation_name} completado. No se puede determinar el número de filas borradas directamente desde la respuesta de delete sin 'returning'.")
         return -1 # Indicador de que no se contó.
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name}: {e.message}", exc_info=True)
         return 0
     except httpx.RequestError as e:
@@ -981,7 +986,7 @@ async def insert_appointment(appointment_data: Dict[str, Any]) -> Dict[str, Any]
 
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).insert(appointment_data).execute() # Asume que appointment_data está listo para la DB
+        api_response = supabase.client.from_(table_name).insert(appointment_data).execute() # Asume que appointment_data está listo para la DB
 
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -992,7 +997,7 @@ async def insert_appointment(appointment_data: Dict[str, Any]) -> Dict[str, Any]
         
         return {"success": processed["success"], "id": appointment_id, "appointment": appointment_obj, "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name}: {e.message}", exc_info=True)
         return {"success": False, "id": None, "appointment": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -1009,7 +1014,7 @@ async def get_appointment_by_calendly_uri(calendly_event_uri: str) -> Dict[str, 
     table_name = TABLE_APPOINTMENTS
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).select("*").eq('calendly_event_uri', calendly_event_uri).limit(1).execute()
+        api_response = supabase.client.from_(table_name).select("*").eq('calendly_event_uri', calendly_event_uri).limit(1).execute()
         
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
@@ -1017,7 +1022,7 @@ async def get_appointment_by_calendly_uri(calendly_event_uri: str) -> Dict[str, 
         processed = await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="appointment")
         return {"success": processed["success"], "appointment": processed.get("appointment"), "error": processed.get("error")}
 
-    except (PostgrestAPIError, GotrueAPIError) as e:
+    except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} para URI {calendly_event_uri}: {e.message}", exc_info=True)
         return {"success": False, "appointment": None, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
@@ -1035,7 +1040,7 @@ async def update_appointment_zoom_details(calendly_event_uri: str, zoom_meeting_
     try:
         await supabase._ensure_initialized()
         update_data = {"zoom_meeting_id": zoom_meeting_id, "zoom_join_url": zoom_join_url}
-        api_response = await supabase.client.from_(table_name).update(update_data).eq('calendly_event_uri', calendly_event_uri).execute()
+        api_response = supabase.client.from_(table_name).update(update_data).eq('calendly_event_uri', calendly_event_uri).execute()
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="appointment")
     except Exception as e: logger.error(f"Excepción en {operation_name}: {e}", exc_info=True); return {"success": False, "error": str(e)}
 
@@ -1046,6 +1051,6 @@ async def update_appointment_status(calendly_event_uri: str, status: str) -> Dic
     if not all([calendly_event_uri, status]): return {"success": False, "error": "Datos incompletos para actualizar estado de cita"}
     try:
         await supabase._ensure_initialized()
-        api_response = await supabase.client.from_(table_name).update({"status": status}).eq('calendly_event_uri', calendly_event_uri).execute()
+        api_response = supabase.client.from_(table_name).update({"status": status}).eq('calendly_event_uri', calendly_event_uri).execute()
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="appointment")
     except Exception as e: logger.error(f"Excepción en {operation_name}: {e}", exc_info=True); return {"success": False, "error": str(e)}

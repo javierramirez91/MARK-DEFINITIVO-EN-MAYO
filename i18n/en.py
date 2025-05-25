@@ -98,7 +98,10 @@ messages = {
     
     "fallback": {
         "not_understood": "I'm sorry, I didn't understand your message. Could you rephrase it?",
-        "need_more_info": "I need a bit more information to help you correctly.",
+        "need_more_info": "I need a bit more information to help you properly.",
         "suggest_options": "I can help you with:\n\n- Scheduling or modifying appointments\n- Information about rates and services\n- Answering questions about therapy\n- Contacting your therapist\n\nHow can I help you?"
     }
-} 
+}
+
+# Alias for compatibility
+MESSAGES = messages 

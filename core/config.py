@@ -6,8 +6,8 @@ import os
 import logging
 import json # Necesario para el manejo del JSON en el validador
 from typing import Dict, List, Any, Optional # Eliminado Set
-from pydantic import validator, ValidationError # BaseSettings se importará de env_settings
-from pydantic.env_settings import BaseSettings # Importación correcta para Pydantic v1.x
+from pydantic import field_validator, ValidationError # field_validator es el nuevo nombre en v2
+from pydantic_settings import BaseSettings, SettingsConfigDict # BaseSettings ahora está en pydantic-settings para v2
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env (primero)
@@ -107,7 +107,7 @@ class Settings(BaseSettings):
     }
 
     # Validador para SUPPORTED_LANGUAGES para intentar parsear desde env como JSON
-    @validator('SUPPORTED_LANGUAGES', pre=True, always=True)
+    @field_validator('SUPPORTED_LANGUAGES', mode='before')
     @classmethod
     def parse_supported_languages(cls, v: Any) -> List[str]:
         default_languages = ["es", "ca", "en", "ar"] # Valor predeterminado explícito
@@ -143,11 +143,12 @@ class Settings(BaseSettings):
             logger.warning(f"Tipo inesperado o valor vacío para SUPPORTED_LANGUAGES ('{v}', tipo: {type(v)}). Usando default: {default_languages}")
         return default_languages
 
-    # Pydantic model config
-    class Config:
-        env_file = '.env' # Carga desde .env si existe
-        env_file_encoding = 'utf-8'
-        extra = 'ignore' # Ignorar variables extra del entorno
+    # Configuración del modelo Pydantic v2
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        extra='ignore'
+    )
 
 # Instanciar la configuración global
 # Pydantic leerá las variables de entorno y .env al crear la instancia

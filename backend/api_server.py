@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional #, List, Annotated, Tuple # List, Annotat
 
 # from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, Query, Depends, Form, Header, Body, APIRouter, status, Security, Response, WebSocket, WebSocketDisconnect, Middleware # FastAPI, Middleware no usadas directamente; APIRouter ya está importado
 from fastapi import Request, HTTPException, BackgroundTasks, Query, Depends, Form, Header, Body, APIRouter, status, Security, Response, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse
 # from fastapi.middleware.cors import CORSMiddleware # No usado
 # from dotenv import load_dotenv # No usado
 from pydantic import BaseModel, Field, ValidationError
@@ -41,20 +42,20 @@ from database.d1_client import (
     get_session_data, save_session_data, delete_expired_sessions,
     insert_notification, get_pending_notifications, update_notification_status,
     get_system_config,
-    insert_appointment, get_appointment_by_calendly_uri, update_appointment_status
+    insert_appointment, get_appointment_by_calendly_uri, update_appointment_status, update_appointment_zoom_details
 )
 
 # Servicios
 from services.whatsapp import send_whatsapp_message, send_whatsapp_message_meta, verify_meta_webhook_signature, handle_meta_webhook, download_media_meta
 # from services.calendly import get_available_slots, schedule_appointment # Eliminado
-from services.zoom import get_meeting_details, cancel_zoom_meeting, ZOOM_OAUTH_TOKEN_URL
+from services.zoom import get_meeting_details, cancel_zoom_meeting, ZOOM_OAUTH_TOKEN_URL, create_zoom_meeting
 # from services.stripe import generate_payment_link, check_payment_status # Eliminado
 
 # Traducciones
 from i18n import get_message
 
 # --- Configuración del Router ---
-apirouter = APIRouter(prefix="/api", tags=["API"])
+apirouter = APIRouter(tags=["API"])
 
 # --- Estados de Sesión (Ahora en Base de Datos) ---
 # SESSION_STORE = {}
@@ -182,7 +183,7 @@ async def schedule_appointment_endpoint(
     """Programa una cita en Calendly (requiere refactorizar service a async)."""
     raise HTTPException(status_code=501, detail="Funcionalidad de Calendly pendiente de refactorización async")
 
-@apirouter.post("/api/stripe/webhook")
+@apirouter.post("/stripe/webhook")
 async def stripe_webhook(request: Request):
     """Endpoint para recibir webhooks de Stripe."""
     payload = await request.body()
@@ -202,7 +203,7 @@ async def stripe_webhook(request: Request):
         response_status = 200 if status_code == 500 else status_code 
         return JSONResponse(content={"status": "error", "detail": result.get("error")}, status_code=response_status)
 
-@apirouter.post("/api/calendly/webhook")
+@apirouter.post("/calendly/webhook")
 async def calendly_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     Webhook para eventos de Calendly (ej: cita creada, cancelada).
@@ -389,7 +390,7 @@ async def shutdown_event():
     logger.info("Servidor API detenido.")
 
 # --- Endpoint para actualizar paciente ---
-@apirouter.patch("/patients/{patient_id}", tags=["Patients"])
+@apirouter.patch("/patients/{patient_id}")
 async def api_update_patient(
     patient_id: str,
     update_payload: PatientUpdatePayload

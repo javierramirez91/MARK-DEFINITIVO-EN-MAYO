@@ -102,4 +102,7 @@ messages = {
         "need_more_info": "Necesito un poco más de información para poder ayudarte correctamente.",
         "suggest_options": "Puedo ayudarte con:\n\n- Programar o modificar citas\n- Información sobre tarifas y servicios\n- Resolver dudas sobre la terapia\n- Contactar con tu terapeuta\n\n¿En qué te puedo ayudar?"
     }
-} 
+}
+
+# Alias para compatibilidad
+MESSAGES = messages 
