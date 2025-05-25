@@ -9,70 +9,154 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python main.py
     envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: HOST
-        value: 0.0.0.0
-      - key: PORT
-        value: 10000
+      # Variables obligatorias (Render genera automáticamente)
       - key: SECRET_KEY
         generateValue: true
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: ENCRYPTION_SALT
         generateValue: true
-      # Variables de Supabase (necesitarás configurarlas manualmente)
+      
+      # Configuración de producción
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      
+      # Supabase (Base de Datos)
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
         sync: false
-      # Variables de WhatsApp (necesitarás configurarlas manualmente)
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      
+      # WhatsApp / Meta
       - key: WHATSAPP_TOKEN
         sync: false
       - key: WHATSAPP_PHONE_NUMBER_ID
         sync: false
       - key: WHATSAPP_VERIFY_TOKEN
         sync: false
-      # Variables de Stripe (necesitarás configurarlas manualmente)
+      - key: WHATSAPP_APP_SECRET
+        sync: false
+      
+      # OpenRouter / IA
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: meta-llama/llama-3.1-8b-instruct:free
+      - key: OPENROUTER_HTTP_REFERER
+        sync: false
+      
+      # Stripe (Pagos)
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      # Variables de Calendly (necesitarás configurarlas manualmente)
+      - key: STRIPE_PRICE_ID_STANDARD
+        sync: false
+      - key: STRIPE_PRICE_ID_REDUCIDA
+        sync: false
+      - key: STRIPE_PRICE_ID_PAREJA
+        sync: false
+      - key: STRIPE_PRICE_ID_CANCELLATION
+        sync: false
+      - key: STRIPE_LINK_SUCCESS
+        sync: false
+      - key: STRIPE_LINK_CANCEL
+        sync: false
+      
+      # Calendly
       - key: CALENDLY_ACCESS_TOKEN
         sync: false
-      # Variables de Zoom (necesitarás configurarlas manualmente)
+      - key: CALENDLY_USER_URI
+        sync: false
+      - key: CALENDLY_WEBHOOK_URL
+        sync: false
+      
+      # Zoom
       - key: ZOOM_ACCOUNT_ID
         sync: false
       - key: ZOOM_CLIENT_ID
         sync: false
       - key: ZOOM_CLIENT_SECRET
         sync: false
+      
+      # Contacto de emergencia
+      - key: EMERGENCY_CONTACT
+        sync: false
+      
+      # Configuración regional
+      - key: SUPPORTED_LANGUAGES
+        value: '["es","ca","en","ar"]'
+      - key: DEFAULT_LANGUAGE
+        value: es
+      
+      # Información del centro
+      - key: CENTER_NAME
+        value: Centro de Psicologia Jaume I
+      - key: CENTER_ADDRESS
+        value: Gran Via Jaume I, 41-43, Entresol 1a, 17001, Girona, España
+      - key: CENTER_EMAIL
+        value: info@centrepsicologiajaumeprimer.com
+      - key: CENTER_WEBSITE
+        value: https://centrepsicologiajaume1.com
 
   # Panel de Administración
   - type: web
     name: mark-admin
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python -m uvicorn admin.admin_panel:app --host 0.0.0.0 --port 10000
+    startCommand: python -m uvicorn admin.admin_panel:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: HOST
-        value: 0.0.0.0
-      - key: ADMIN_PORT
-        value: 10000
+      # Variables obligatorias (Render genera automáticamente)
       - key: SECRET_KEY
         generateValue: true
       - key: ENCRYPTION_KEY
         generateValue: true
       - key: ENCRYPTION_SALT
         generateValue: true
-      # Variables de Supabase (necesitarás configurarlas manualmente)
+      
+      # Configuración de producción
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      
+      # Supabase (Base de Datos)
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_KEY
         sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      
+      # Configuración regional
+      - key: SUPPORTED_LANGUAGES
+        value: '["es","ca","en","ar"]'
+      - key: DEFAULT_LANGUAGE
+        value: es
+      
+      # Información del centro
+      - key: CENTER_NAME
+        value: Centro de Psicologia Jaume I
+      - key: CENTER_EMAIL
+        value: info@centrepsicologiajaumeprimer.com
+      - key: CENTER_WEBSITE
+        value: https://centrepsicologiajaume1.com
 
 # Base de datos: Usamos Supabase PostgreSQL en lugar de Cloudflare D1
 # No es necesario configurar un servicio de base de datos adicional en Render
