@@ -6,7 +6,8 @@ import os
 import logging
 import json # Necesario para el manejo del JSON en el validador
 from typing import Dict, List, Any, Optional # Eliminado Set
-from pydantic import validator, ValidationError, BaseSettings # Cambiado field_validator a validator y BaseSettings importada desde pydantic
+from pydantic import validator, ValidationError # BaseSettings se importará de env_settings
+from pydantic.env_settings import BaseSettings # Importación correcta para Pydantic v1.x
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env (primero)

@@ -40,27 +40,27 @@ from database.d1_client import insert_audit_log # Para auditoría
 # Asegúrate de que settings esté correctamente importado y configurado
 # from core.config import settings # Descomenta si tienes tu configuración aquí
 # ----- Mock Settings (Reemplaza con tu import real) -----
-class MockSettings:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "a_very_secret_key_for_testing_only_replace_in_prod_32_chars_long") # ¡Reemplazar en producción! Mínimo 32 chars.
-    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
-    ADMIN_USERNAME = "admin" # Puede ser obsoleto si creas admin en DB
-    ADMIN_PASSWORD_HASH = "" # Obsoleto, el hash estará en la DB
-    HOST = os.environ.get("HOST", "127.0.0.1")
-    ADMIN_PORT = int(os.environ.get("ADMIN_PORT", 8001))
-    ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
-    CENTER_ADDRESS = os.environ.get("CENTER_ADDRESS", "Calle Falsa 123, Ciudad Ejemplo")
-    # ¡IMPORTANTE! Configura estas claves de forma segura (variables de entorno, secrets manager)
-    ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY", "default_strong_encryption_key_32_bytes") # ¡Reemplazar! Debe ser fuerte.
-    ENCRYPTION_SALT = os.environ.get("ENCRYPTION_SALT", "default_unique_salt_value_needs_replace") # ¡Reemplazar! Debe ser único.
-    # Nuevo: Constante para intentos de login
-    MAX_LOGIN_ATTEMPTS = int(os.environ.get("MAX_LOGIN_ATTEMPTS", 5))
+# class MockSettings:
+#     SECRET_KEY = os.environ.get("SECRET_KEY", "a_very_secret_key_for_testing_only_replace_in_prod_32_chars_long") # ¡Reemplazar en producción! Mínimo 32 chars.
+#     ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+#     ADMIN_USERNAME = "admin" # Puede ser obsoleto si creas admin en DB
+#     ADMIN_PASSWORD_HASH = "" # Obsoleto, el hash estará en la DB
+#     HOST = os.environ.get("HOST", "127.0.0.1")
+#     ADMIN_PORT = int(os.environ.get("ADMIN_PORT", 8001))
+#     ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
+#     CENTER_ADDRESS = os.environ.get("CENTER_ADDRESS", "Calle Falsa 123, Ciudad Ejemplo")
+#     # ¡IMPORTANTE! Configura estas claves de forma segura (variables de entorno, secrets manager)
+#     ENCRYPTION_KEY = os.environ.get("ENCRYPTION_KEY", "default_strong_encryption_key_32_bytes") # ¡Reemplazar! Debe ser fuerte.
+#     ENCRYPTION_SALT = os.environ.get("ENCRYPTION_SALT", "default_unique_salt_value_needs_replace") # ¡Reemplazar! Debe ser único.
+#     # Nuevo: Constante para intentos de login
+#     MAX_LOGIN_ATTEMPTS = int(os.environ.get("MAX_LOGIN_ATTEMPTS", 5))
 
-settings = MockSettings()
-# Validar longitud de SECRET_KEY y ENCRYPTION_KEY (Fernet necesita 32 bytes URL-safe base64-encoded)
-if len(base64.urlsafe_b64encode(settings.ENCRYPTION_KEY.encode()[:32])) < 32: # Una validación simple
-     logging.warning("ENCRYPTION_KEY podría no ser adecuada para Fernet. Asegúrate que sea suficientemente larga y segura.")
-if len(settings.SECRET_KEY) < 32:
-     logging.warning("SECRET_KEY es corta. Se recomienda una clave aleatoria de al menos 32 caracteres.")
+# settings = MockSettings()
+# # Validar longitud de SECRET_KEY y ENCRYPTION_KEY (Fernet necesita 32 bytes URL-safe base64-encoded)
+# if len(base64.urlsafe_b64encode(settings.ENCRYPTION_KEY.encode()[:32])) < 32: # Una validación simple
+#      logging.warning("ENCRYPTION_KEY podría no ser adecuada para Fernet. Asegúrate que sea suficientemente larga y segura.")
+# if len(settings.SECRET_KEY) < 32:
+#      logging.warning("SECRET_KEY es corta. Se recomienda una clave aleatoria de al menos 32 caracteres.")
 # ------------------------------------------------------
 
 # --- Database Client Import (Actualizado) ---
