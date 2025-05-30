@@ -810,7 +810,7 @@ async def dashboard(request: Request):
         notificaciones_pendientes = 0
     
     # Devolver la plantilla HTML del dashboard con los datos reales
-    return templates.TemplateResponse("dashboard/index.html", {
+    return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "total_usuarios": total_usuarios,
         "total_pacientes": total_pacientes,
