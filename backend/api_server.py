@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional #, List, Annotated, Tuple # List, Annotat
 
 # from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, Query, Depends, Form, Header, Body, APIRouter, status, Security, Response, WebSocket, WebSocketDisconnect, Middleware # FastAPI, Middleware no usadas directamente; APIRouter ya está importado
 from fastapi import Request, HTTPException, BackgroundTasks, Query, Depends, Form, Header, Body, APIRouter, status, Security, Response, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 # from fastapi.middleware.cors import CORSMiddleware # No usado
 # from dotenv import load_dotenv # No usado
 from pydantic import BaseModel, Field, ValidationError
@@ -112,14 +112,66 @@ async def health_check():
     ...
 
 @apirouter.get("/whatsapp/webhook")
-async def verify_whatsapp_webhook(request: Request):
-    # ... (código existente)
-    ...
+async def verify_whatsapp_webhook(
+    request: Request,
+    hub_mode: Optional[str] = Query(None, alias="hub.mode"),
+    hub_challenge: Optional[str] = Query(None, alias="hub.challenge"),
+    hub_verify_token: Optional[str] = Query(None, alias="hub.verify_token")
+):
+    """
+    Verifica el webhook de WhatsApp para Meta.
+    Meta envía una solicitud GET con parámetros para verificar el endpoint.
+    """
+    logger.info(f"Verificación de webhook recibida - Mode: {hub_mode}, Token: {hub_verify_token}, Challenge: {hub_challenge}")
+    
+    # Verificar que sea una solicitud de suscripción
+    if hub_mode == "subscribe":
+        # Verificar que el token coincida
+        if hub_verify_token == settings.WHATSAPP_VERIFY_TOKEN:
+            logger.info("Token de verificación correcto. Respondiendo con challenge.")
+            # Devolver el challenge como texto plano
+            return PlainTextResponse(content=hub_challenge, status_code=200)
+        else:
+            logger.warning(f"Token de verificación incorrecto. Esperado: {settings.WHATSAPP_VERIFY_TOKEN}, Recibido: {hub_verify_token}")
+            raise HTTPException(status_code=403, detail="Invalid verification token")
+    else:
+        logger.warning(f"Modo de webhook no soportado: {hub_mode}")
+        raise HTTPException(status_code=400, detail="Invalid hub mode")
 
 @apirouter.post("/whatsapp/webhook")
 async def receive_whatsapp_webhook(request: Request, background_tasks: BackgroundTasks):
-    # ... (código existente)
-    ...
+    """
+    Recibe y procesa webhooks de WhatsApp desde Meta.
+    """
+    try:
+        # Verificar la firma (opcional en desarrollo)
+        signature = request.headers.get("X-Hub-Signature-256", "")
+        request_body = await request.body()
+        
+        # Verificar firma en producción
+        if settings.ENVIRONMENT != "development":
+            if not verify_meta_webhook_signature(request_body, signature):
+                logger.warning("Firma de webhook inválida")
+                raise HTTPException(status_code=403, detail="Invalid signature")
+        
+        # Parsear el cuerpo de la solicitud
+        request_data = await request.json()
+        
+        logger.info(f"Webhook de WhatsApp recibido: {json.dumps(request_data, indent=2)}")
+        
+        # Procesar el webhook en background
+        background_tasks.add_task(handle_meta_webhook, request_data)
+        
+        # Responder inmediatamente a Meta
+        return Response(status_code=200)
+        
+    except json.JSONDecodeError:
+        logger.error("Error al decodificar JSON del webhook")
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    except Exception as e:
+        logger.error(f"Error procesando webhook: {e}")
+        # Siempre devolver 200 para evitar reintentos de Meta
+        return Response(status_code=200)
 
 # --- Endpoints eliminados (Calendly / Stripe / etc.) ---
 # @apirouter.post("/calendly/webhook")
