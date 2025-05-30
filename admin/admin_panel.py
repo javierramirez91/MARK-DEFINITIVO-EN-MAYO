@@ -1205,6 +1205,92 @@ def sanitize_data_for_logs(data: Optional[Dict[str, Any]]) -> Optional[Dict[str,
     return sanitized_data
 
 
+# --- Rutas de gestión de usuarios ---
+@app.get("/users", response_class=HTMLResponse)
+async def list_users(request: Request):
+    """Lista todos los usuarios del sistema."""
+    logger.info("Listando usuarios del sistema")
+    try:
+        users_data = await get_all_db_users(limit=100)
+        users = users_data.get("users", [])
+        
+        # Mock user temporal
+        mock_user = {"username": "admin_temp", "roles": ["admin"]}
+        
+        return templates.TemplateResponse("users/list.html", {
+            "request": request,
+            "users": users,
+            "user": mock_user,
+            "user_permissions": ["read", "write", "delete", "manage_users"]
+        })
+    except Exception as e:
+        logger.error(f"Error listando usuarios: {e}", exc_info=True)
+        return templates.TemplateResponse("error.html", {"request": request, "error": str(e)}, status_code=500)
+
+
+# --- Rutas de notificaciones ---
+@app.get("/notifications", response_class=HTMLResponse)
+async def list_notifications(request: Request):
+    """Lista todas las notificaciones."""
+    logger.info("Listando notificaciones")
+    try:
+        notifications_data = await get_all_notifications()
+        notifications = notifications_data.get("notifications", [])
+        
+        # Mock user temporal
+        mock_user = {"username": "admin_temp", "roles": ["admin"]}
+        
+        return templates.TemplateResponse("notifications/list.html", {
+            "request": request,
+            "notifications": notifications,
+            "user": mock_user
+        })
+    except Exception as e:
+        logger.error(f"Error listando notificaciones: {e}", exc_info=True)
+        return templates.TemplateResponse("error.html", {"request": request, "error": str(e)}, status_code=500)
+
+
+# --- Rutas de configuración ---
+@app.get("/config", response_class=HTMLResponse)
+async def system_config(request: Request):
+    """Muestra la configuración del sistema."""
+    logger.info("Accediendo a configuración del sistema")
+    try:
+        configs = await get_all_configs()
+        config_list = configs.get("configs", [])
+        
+        # Mock user temporal
+        mock_user = {"username": "admin_temp", "roles": ["admin"]}
+        
+        return templates.TemplateResponse("config/index.html", {
+            "request": request,
+            "configs": config_list,
+            "user": mock_user
+        })
+    except Exception as e:
+        logger.error(f"Error obteniendo configuración: {e}", exc_info=True)
+        return templates.TemplateResponse("error.html", {"request": request, "error": str(e)}, status_code=500)
+
+
+# --- Rutas de logs ---
+@app.get("/logs", response_class=HTMLResponse)
+async def audit_logs(request: Request):
+    """Muestra los logs de auditoría."""
+    logger.info("Accediendo a logs de auditoría")
+    try:
+        # Por ahora, devolver una página simple indicando que está en construcción
+        mock_user = {"username": "admin_temp", "roles": ["admin"]}
+        
+        return templates.TemplateResponse("logs/index.html", {
+            "request": request,
+            "logs": [],  # Lista vacía por ahora
+            "user": mock_user
+        })
+    except Exception as e:
+        logger.error(f"Error obteniendo logs: {e}", exc_info=True)
+        return templates.TemplateResponse("error.html", {"request": request, "error": str(e)}, status_code=500)
+
+
 # --- Función principal para ejecutar la aplicación ---
 def run_admin_panel():
     """Ejecuta el panel de administración."""
