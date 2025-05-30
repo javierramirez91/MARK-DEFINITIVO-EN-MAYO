@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración del Sistema - Mark Admin{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h4>Configuración del Sistema</h4>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Estas configuraciones afectan el comportamiento global del sistema.
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Clave</th>
+                        <th>Valor</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if configs %}
+                        {% for config in configs %}
+                        <tr>
+                            <td>
+                                <code>{{ config.key }}</code>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <input type="text" class="form-control form-control-sm" 
+                                           id="config-{{ config.key }}" 
+                                           value="{{ config.value }}" 
+                                           style="max-width: 400px;">
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-success" 
+                                        onclick="alert('Guardar configuración próximamente: ' + document.getElementById('config-{{ config.key }}').value)">
+                                    <i class="bi bi-check"></i> Guardar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center">No hay configuraciones disponibles</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <hr>
+        
+        <div class="mt-4">
+            <h5>Agregar Nueva Configuración</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" placeholder="Clave" id="new-config-key">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Valor" id="new-config-value">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="alert('Agregar configuración próximamente')">
+                        <i class="bi bi-plus"></i> Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
