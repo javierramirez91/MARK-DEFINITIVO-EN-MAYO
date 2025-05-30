@@ -661,7 +661,7 @@ async def get_pending_notifications(limit: int = 10, table_name: str = TABLE_NOT
     try:
         await supabase._ensure_initialized()
         
-        # ----- REVERTIDO A CONSULTA ORIGINAL -----
+        # ----- REVERTIDO A CONSULTA ORIGINAL (sin await) ----- # Comentario actualizado para forzar redeploy
         api_response = supabase.client.from_(table_name).select("*").eq("status", "pendiente").order("created_at", desc=False).limit(limit).execute()
         # ----- FIN DE REVERSIÓN -----
 
