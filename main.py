@@ -20,10 +20,10 @@ from pathlib import Path
 # from datetime import timedelta # No usado
 
 import uvicorn
-from fastapi import FastAPI # , Request, Depends, HTTPException, BackgroundTasks # No usados directamente
+from fastapi import FastAPI, Request, HTTPException, Query # , Depends, BackgroundTasks # No usados directamente
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse # Añadido PlainTextResponse
 # from fastapi.responses import JSONResponse # No usado
 
 from core.config import settings, logger, verify_config
@@ -41,6 +41,26 @@ app = FastAPI(
 
 # Montar el router de la API
 app.include_router(apirouter, prefix="/api")
+
+# Nuevo endpoint para la verificación del webhook de WhatsApp
+@app.get("/webhook")
+async def verify_whatsapp_webhook_direct(
+    request: Request,
+    hub_mode: Optional[str] = Query(None, alias="hub.mode"),
+    hub_challenge: Optional[str] = Query(None, alias="hub.challenge"),
+    hub_verify_token: Optional[str] = Query(None, alias="hub.verify_token")
+):
+    """
+    Verifica el webhook de WhatsApp directamente para la configuración inicial de Meta.
+    """
+    logger.info(f"Llamada GET a /webhook recibida. Query params: hub.mode='{hub_mode}', hub.challenge='{hub_challenge}', hub.verify_token='{hub_verify_token}'")
+
+    if hub_mode == "subscribe" and hub_verify_token == settings.WHATSAPP_VERIFY_TOKEN:
+        logger.info(f"Webhook verificado correctamente (ruta /webhook). Challenge: {hub_challenge}")
+        return PlainTextResponse(content=hub_challenge, status_code=200)
+    else:
+        logger.warning(f"Fallo en la verificación del webhook (ruta /webhook). Token recibido: '{hub_verify_token}', Modo: '{hub_mode}'. Token esperado: '{settings.WHATSAPP_VERIFY_TOKEN}'")
+        raise HTTPException(status_code=403, detail="Invalid verification token or mode")
 
 # Configurar CORS
 app.add_middleware(
