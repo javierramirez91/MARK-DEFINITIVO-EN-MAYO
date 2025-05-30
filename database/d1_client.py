@@ -662,7 +662,7 @@ async def get_pending_notifications(limit: int = 10, table_name: str = TABLE_NOT
         await supabase._ensure_initialized()
         
         # ----- REVERTIDO A CONSULTA ORIGINAL -----
-        api_response = await supabase.client.from_(table_name).select("*").eq("status", "pendiente").order("created_at", desc=False).limit(limit).execute()
+        api_response = supabase.client.from_(table_name).select("*").eq("status", "pendiente").order("created_at", desc=False).limit(limit).execute()
         # ----- FIN DE REVERSIÓN -----
 
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
