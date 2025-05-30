@@ -182,22 +182,24 @@ services:
 #      - key: POSTGRES_DB
 #        value: mark_assistant 
 
-# Temporarily commenting out the cron section to isolate the issue
-# Top-level Cron Jobs for maintenance
-# cron:
-#   jobs:
-#     - schedule: "0 2 * * *"  # Run daily at 2 AM
-#       command: "python -m scripts.backup_database --output /data/backups/database_$(date +%Y%m%d).bak"
-#       serviceName: mark-assistant  # Specify which service runs the command
-#     - schedule: "0 3 * * *"  # Run daily at 3 AM
-#       command: "python -m scripts.backup_encryption_keys --output /data/backups/encryption_keys_$(date +%Y%m%d).zip"
-#       serviceName: mark-assistant
-#     - schedule: "0 4 * * *"  # Run daily at 4 AM
-#       command: "python -m scripts.check_key_rotation"
-#       serviceName: mark-assistant
-#     - schedule: "0 5 * * *"  # Run daily at 5 AM
-#       command: "python -m scripts.verify_security"
-#       serviceName: mark-assistant
-#     - schedule: "0 */6 * * *"  # Run every 6 hours
-#       command: "python -m scripts.clean_temp_files"
-#       serviceName: mark-assistant 
+# Cron Jobs para mantenimiento y backups
+cron:
+  jobs:
+    - name: backup-database
+      schedule: "0 2 * * *"  # Diario a las 2:00 AM UTC
+      serviceName: mark-api
+      command: "python -m scripts.backup_database --output ./backups/database_$(date +\%Y\%m\%d_\%H\%M\%S).bak"
+    - name: backup-keys
+      schedule: "0 3 * * *"  # Diario a las 3:00 AM UTC
+      serviceName: mark-api
+      command: "python -m scripts.backup_encryption_keys --output ./backups/encryption_keys_$(date +\%Y\%m\%d_\%H\%M\%S).json"
+    # Puedes añadir más cron jobs aquí si es necesario
+    # Ejemplo: Limpieza de sesiones expiradas (si no se hace en otro lado)
+    # - name: cleanup-sessions
+    #   schedule: "0 1 * * *" # Diario a la 1:00 AM UTC
+    #   serviceName: mark-api
+    #   command: "# Aquí iría el comando para llamar al endpoint /admin/cleanup_sessions"
+    #   # Nota: Los cron jobs de Render ejecutan comandos shell. Para llamar a un endpoint HTTP,
+    #   # necesitarías usar curl o una herramienta similar, e incluir la INTERNAL_API_KEY.
+    #   # Ejemplo con curl (requiere que curl esté disponible en el entorno):
+    #   # command: "curl -X POST \"${RENDER_SERVICE_URL}/api/admin/cleanup_sessions?api_key=${INTERNAL_API_KEY}\"" 
