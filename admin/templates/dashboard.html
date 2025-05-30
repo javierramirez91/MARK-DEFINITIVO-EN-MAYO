@@ -275,11 +275,11 @@
         
         async function loadStats() {
             try {
-                // Mostrar valores de ejemplo por ahora
-                document.getElementById('total-users').textContent = '5';
-                document.getElementById('total-patients').textContent = '127';
-                document.getElementById('appointments-today').textContent = '8';
-                document.getElementById('pending-notifications').textContent = '3';
+                // Usar valores reales pasados desde el servidor
+                document.getElementById('total-users').textContent = '{{ total_usuarios }}';
+                document.getElementById('total-patients').textContent = '{{ total_pacientes }}';
+                document.getElementById('appointments-today').textContent = '{{ citas_hoy }}';
+                document.getElementById('pending-notifications').textContent = '{{ notificaciones_pendientes }}';
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
             }

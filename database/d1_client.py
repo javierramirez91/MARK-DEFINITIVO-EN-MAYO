@@ -516,13 +516,13 @@ async def get_all_appointments(limit=1000, offset=0, sort_by="scheduled_date", o
 
     except (PostgrestAPIError, AuthApiError) as e: # Cambiado GotrueAPIError a AuthApiError
         logger.error(f"Error Supabase API en {operation_name} ({table_name}): {e.message}", exc_info=True)
-        return {"success": False, "appointments": [], "total": 0, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
+        return {"success": False, "appointments": [], "results": [], "total": 0, "error": f"Error de Supabase API: {e.message}", "details": str(e)}
     except httpx.RequestError as e:
         logger.error(f"Error de Red/Conexión en {operation_name} ({table_name}): {e}", exc_info=True)
-        return {"success": False, "appointments": [], "total": 0, "error": f"Error de Red: {type(e).__name__}", "details": str(e)}
+        return {"success": False, "appointments": [], "results": [], "total": 0, "error": f"Error de Red: {type(e).__name__}", "details": str(e)}
     except Exception as e:
         logger.exception(f"Excepción general en {operation_name}: {e}")
-        return {"success": False, "appointments": [], "total": 0, "error": f"Error inesperado: {type(e).__name__}", "details": str(e)}
+        return {"success": False, "appointments": [], "results": [], "total": 0, "error": f"Error inesperado: {type(e).__name__}", "details": str(e)}
 
 async def insert_appointment_record(appointment_data: Dict[str, Any]) -> Dict[str, Any]:
     operation_name = "insert_appointment_record"
