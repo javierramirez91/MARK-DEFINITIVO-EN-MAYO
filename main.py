@@ -15,6 +15,7 @@ from datetime import datetime
 # import logging # No usado
 import asyncio
 # import threading # ELIMINADO
+from typing import Optional # Importación añadida
 # from typing import Dict, List, Any, Optional # No usados directamente
 from pathlib import Path
 # from datetime import timedelta # No usado
