@@ -37,6 +37,9 @@ from database.d1_client import get_pending_notifications as d1_get_pending_notif
 from database.d1_client import get_system_config as d1_get_system_config, set_system_config as d1_set_system_config, get_all_configs # Configuración
 from database.d1_client import insert_audit_log # Para auditoría
 
+# Importar nuevas funciones de conteo
+from database.d1_client import count_users, count_patients, count_appointments_today, count_pending_notifications
+
 # Importar funciones de appointments y crear alias para sessions
 from database.d1_client import (
     get_appointment_by_id,
@@ -753,9 +756,67 @@ async def dashboard(request: Request):
     """Muestra el dashboard principal del panel de administración."""
     logger.info(f"Accediendo al dashboard sin autenticación.")
     
-    # Devolver la plantilla HTML del dashboard
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request
+    # Obtener datos reales de la base de datos
+    try:
+        # Ejecutar todas las consultas de conteo en paralelo para mejor rendimiento
+        tasks = [
+            count_users(),
+            count_patients(),
+            count_appointments_today(),
+            count_pending_notifications()
+        ]
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Procesar resultados con valores por defecto en caso de error
+        total_usuarios = 0
+        total_pacientes = 0
+        citas_hoy = 0
+        notificaciones_pendientes = 0
+        
+        # Usuarios
+        if isinstance(results[0], dict) and results[0].get("success"):
+            total_usuarios = results[0].get("count", 0)
+        else:
+            logger.error(f"Error obteniendo conteo de usuarios: {results[0]}")
+            
+        # Pacientes
+        if isinstance(results[1], dict) and results[1].get("success"):
+            total_pacientes = results[1].get("count", 0)
+        else:
+            logger.error(f"Error obteniendo conteo de pacientes: {results[1]}")
+            
+        # Citas hoy
+        if isinstance(results[2], dict) and results[2].get("success"):
+            citas_hoy = results[2].get("count", 0)
+        else:
+            logger.error(f"Error obteniendo conteo de citas hoy: {results[2]}")
+            
+        # Notificaciones pendientes
+        if isinstance(results[3], dict) and results[3].get("success"):
+            notificaciones_pendientes = results[3].get("count", 0)
+        else:
+            logger.error(f"Error obteniendo conteo de notificaciones: {results[3]}")
+            
+        logger.info(f"Dashboard - Usuarios: {total_usuarios}, Pacientes: {total_pacientes}, "
+                   f"Citas hoy: {citas_hoy}, Notificaciones: {notificaciones_pendientes}")
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo datos para el dashboard: {e}", exc_info=True)
+        # Usar valores por defecto si hay un error general
+        total_usuarios = 0
+        total_pacientes = 0
+        citas_hoy = 0
+        notificaciones_pendientes = 0
+    
+    # Devolver la plantilla HTML del dashboard con los datos reales
+    return templates.TemplateResponse("dashboard/index.html", {
+        "request": request,
+        "total_usuarios": total_usuarios,
+        "total_pacientes": total_pacientes,
+        "citas_hoy": citas_hoy,
+        "notificaciones_pendientes": notificaciones_pendientes,
+        # "current_user": current_user # Comentado
     })
 
 

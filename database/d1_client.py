@@ -1057,3 +1057,104 @@ async def update_appointment_status(calendly_event_uri: str, status: str) -> Dic
         api_response = supabase.client.from_(table_name).update({"status": status}).eq('calendly_event_uri', calendly_event_uri).execute()
         return await _handle_supabase_response(api_response.data, operation_name, table_name, return_key_singular="appointment")
     except Exception as e: logger.error(f"Excepción en {operation_name}: {e}", exc_info=True); return {"success": False, "error": str(e)}
+
+
+# --- Funciones de Conteo para Dashboard ---
+async def count_users() -> Dict[str, Any]:
+    """Cuenta el número total de usuarios en el sistema."""
+    operation_name = "count_users"
+    table_name = TABLE_USUARIOS
+    try:
+        await supabase._ensure_initialized()
+        # En Supabase, podemos usar count para obtener solo el número
+        # Usando select con count=exact
+        api_response = supabase.admin_client.from_(table_name).select('*', count='exact').execute()
+        
+        # El count viene en api_response.count
+        count = api_response.count if hasattr(api_response, 'count') else len(api_response.data or [])
+        
+        return {
+            "success": True,
+            "count": count,
+            "error": None
+        }
+        
+    except Exception as e:
+        logger.error(f"Error en {operation_name}: {e}", exc_info=True)
+        return {"success": False, "count": 0, "error": str(e)}
+
+
+async def count_patients() -> Dict[str, Any]:
+    """Cuenta el número total de pacientes."""
+    operation_name = "count_patients"
+    table_name = TABLE_PACIENTES
+    try:
+        await supabase._ensure_initialized()
+        api_response = supabase.client.from_(table_name).select('*', count='exact').execute()
+        
+        count = api_response.count if hasattr(api_response, 'count') else len(api_response.data or [])
+        
+        return {
+            "success": True,
+            "count": count,
+            "error": None
+        }
+        
+    except Exception as e:
+        logger.error(f"Error en {operation_name}: {e}", exc_info=True)
+        return {"success": False, "count": 0, "error": str(e)}
+
+
+async def count_appointments_today() -> Dict[str, Any]:
+    """Cuenta el número de citas programadas para hoy."""
+    operation_name = "count_appointments_today"
+    table_name = TABLE_APPOINTMENTS
+    try:
+        await supabase._ensure_initialized()
+        
+        # Obtener fechas de inicio y fin del día de hoy en UTC
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
+        
+        # Filtrar citas por fecha
+        api_response = supabase.client.from_(table_name)\
+            .select('*', count='exact')\
+            .gte('scheduled_at', today_start.isoformat())\
+            .lt('scheduled_at', today_end.isoformat())\
+            .execute()
+        
+        count = api_response.count if hasattr(api_response, 'count') else len(api_response.data or [])
+        
+        return {
+            "success": True,
+            "count": count,
+            "error": None
+        }
+        
+    except Exception as e:
+        logger.error(f"Error en {operation_name}: {e}", exc_info=True)
+        return {"success": False, "count": 0, "error": str(e)}
+
+
+async def count_pending_notifications() -> Dict[str, Any]:
+    """Cuenta el número de notificaciones pendientes."""
+    operation_name = "count_pending_notifications"
+    table_name = TABLE_NOTIFICATIONS
+    try:
+        await supabase._ensure_initialized()
+        api_response = supabase.client.from_(table_name)\
+            .select('*', count='exact')\
+            .eq('status', 'pendiente')\
+            .execute()
+        
+        count = api_response.count if hasattr(api_response, 'count') else len(api_response.data or [])
+        
+        return {
+            "success": True,
+            "count": count,
+            "error": None
+        }
+        
+    except Exception as e:
+        logger.error(f"Error en {operation_name}: {e}", exc_info=True)
+        return {"success": False, "count": 0, "error": str(e)}
