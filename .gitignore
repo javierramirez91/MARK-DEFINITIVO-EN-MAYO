@@ -51,6 +51,10 @@ logs/
 *.bak
 *.swp
 
+# Directorio de backups (CONTIENE INFORMACIÓN ALTAMENTE SENSIBLE)
+backups/
+# ¡NUNCA SUBIR ESTE DIRECTORIO! Contiene backups de base de datos y claves de encriptación
+
 # Cachés
 .cache/
 .pytest_cache/

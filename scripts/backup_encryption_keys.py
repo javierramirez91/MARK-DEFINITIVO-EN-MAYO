@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """
-Script para realizar backup de las claves de encriptación y configuración sensible.
-Crea un archivo ZIP protegido con contraseña con las claves importantes.
+Script para realizar backup de las claves de encriptación y secretos del sistema.
+Guarda las claves en un archivo JSON con permisos restrictivos.
 """
 import os
 import sys
 import argparse
-import zipfile
 import json
 from datetime import datetime
-from pathlib import Path
+import stat
 
 # Añadir el directorio raíz al path para poder importar los módulos
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,111 +18,132 @@ from core.config import settings, logger
 
 def backup_encryption_keys(output_path: str):
     """
-    Realiza un backup de las claves de encriptación y configuración sensible.
+    Realiza un backup de todas las claves de encriptación y secretos importantes.
     
     Args:
-        output_path: Ruta donde guardar el archivo ZIP de backup
+        output_path: Ruta donde guardar el archivo de backup
     """
     try:
+        logger.info("=== Iniciando backup de claves de encriptación ===")
+        
+        # Recopilar todas las claves importantes
+        # Solo incluimos las que están configuradas (no None)
+        keys_to_backup = {}
+        
+        # Claves críticas (obligatorias)
+        if settings.SECRET_KEY:
+            keys_to_backup['SECRET_KEY'] = settings.SECRET_KEY
+        if settings.ENCRYPTION_KEY:
+            keys_to_backup['ENCRYPTION_KEY'] = settings.ENCRYPTION_KEY
+        if settings.ENCRYPTION_SALT:
+            keys_to_backup['ENCRYPTION_SALT'] = settings.ENCRYPTION_SALT
+            
+        # API Keys de servicios externos
+        if settings.WHATSAPP_VERIFY_TOKEN:
+            keys_to_backup['WHATSAPP_VERIFY_TOKEN'] = settings.WHATSAPP_VERIFY_TOKEN
+        if settings.WHATSAPP_ACCESS_TOKEN:
+            keys_to_backup['WHATSAPP_ACCESS_TOKEN'] = settings.WHATSAPP_ACCESS_TOKEN
+        if settings.WHATSAPP_APP_SECRET:
+            keys_to_backup['WHATSAPP_APP_SECRET'] = settings.WHATSAPP_APP_SECRET
+            
+        if settings.OPENROUTER_API_KEY:
+            keys_to_backup['OPENROUTER_API_KEY'] = settings.OPENROUTER_API_KEY
+            
+        if settings.STRIPE_API_KEY:
+            keys_to_backup['STRIPE_API_KEY'] = settings.STRIPE_API_KEY
+        if settings.STRIPE_WEBHOOK_SECRET:
+            keys_to_backup['STRIPE_WEBHOOK_SECRET'] = settings.STRIPE_WEBHOOK_SECRET
+            
+        if settings.SUPABASE_URL:
+            keys_to_backup['SUPABASE_URL'] = settings.SUPABASE_URL
+        if settings.SUPABASE_KEY:
+            keys_to_backup['SUPABASE_KEY'] = settings.SUPABASE_KEY
+        if settings.SUPABASE_SERVICE_KEY:
+            keys_to_backup['SUPABASE_SERVICE_KEY'] = settings.SUPABASE_SERVICE_KEY
+        if settings.DATABASE_URL:
+            keys_to_backup['DATABASE_URL'] = settings.DATABASE_URL
+            
+        if settings.CALENDLY_API_KEY:
+            keys_to_backup['CALENDLY_API_KEY'] = settings.CALENDLY_API_KEY
+            
+        if settings.ZOOM_ACCOUNT_ID:
+            keys_to_backup['ZOOM_ACCOUNT_ID'] = settings.ZOOM_ACCOUNT_ID
+        if settings.ZOOM_S2S_CLIENT_ID:
+            keys_to_backup['ZOOM_S2S_CLIENT_ID'] = settings.ZOOM_S2S_CLIENT_ID
+        if settings.ZOOM_S2S_CLIENT_SECRET:
+            keys_to_backup['ZOOM_S2S_CLIENT_SECRET'] = settings.ZOOM_S2S_CLIENT_SECRET
+            
+        if settings.INTERNAL_API_KEY:
+            keys_to_backup['INTERNAL_API_KEY'] = settings.INTERNAL_API_KEY
+            
+        # Información adicional del backup
+        backup_data = {
+            'backup_timestamp': datetime.now().isoformat(),
+            'environment': settings.ENVIRONMENT,
+            'app_version': settings.APP_VERSION,
+            'total_keys_backed_up': len(keys_to_backup),
+            'keys': keys_to_backup
+        }
+        
         # Crear el directorio si no existe
         output_dir = os.path.dirname(output_path)
         if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            logger.info(f"Directorio de backup creado/verificado: {output_dir}")
+            try:
+                os.makedirs(output_dir, exist_ok=True)
+                logger.info(f"Directorio de backup creado/verificado: {output_dir}")
+            except PermissionError as e:
+                logger.error(f"Sin permisos para crear el directorio {output_dir}: {e}")
+                # Intentar usar /tmp como alternativa
+                temp_output_path = os.path.join('/tmp', os.path.basename(output_path))
+                logger.info(f"Intentando usar ruta alternativa: {temp_output_path}")
+                output_path = temp_output_path
+                output_dir = os.path.dirname(output_path)
+                os.makedirs(output_dir, exist_ok=True)
+            except Exception as e:
+                logger.error(f"Error creando directorio de backup: {e}")
+                return False
         
-        # Recopilar las claves importantes (solo las que existen)
-        keys_to_backup = {
-            'ENCRYPTION_KEY': settings.ENCRYPTION_KEY,
-            'ENCRYPTION_SALT': settings.ENCRYPTION_SALT,
-            'SECRET_KEY': settings.SECRET_KEY,
-            'WHATSAPP_APP_SECRET': settings.WHATSAPP_APP_SECRET,
-            'WHATSAPP_ACCESS_TOKEN': settings.WHATSAPP_ACCESS_TOKEN,
-            'WHATSAPP_VERIFY_TOKEN': settings.WHATSAPP_VERIFY_TOKEN,
-            'SUPABASE_SERVICE_KEY': settings.SUPABASE_SERVICE_KEY,
-            'STRIPE_SECRET_KEY': settings.STRIPE_SECRET_KEY or settings.STRIPE_API_KEY,
-            'STRIPE_WEBHOOK_SECRET': settings.STRIPE_WEBHOOK_SECRET,
-            'INTERNAL_API_KEY': settings.INTERNAL_API_KEY,
-            'OPENROUTER_API_KEY': settings.OPENROUTER_API_KEY,
-            'ZOOM_S2S_CLIENT_SECRET': settings.ZOOM_S2S_CLIENT_SECRET or settings.ZOOM_CLIENT_SECRET,
-            'CALENDLY_API_KEY': settings.CALENDLY_API_KEY or settings.CALENDLY_ACCESS_TOKEN,
-        }
-        
-        # Filtrar solo las claves que tienen valor
-        keys_to_backup = {k: v for k, v in keys_to_backup.items() if v}
-        
-        if not keys_to_backup:
-            logger.error("No hay claves configuradas para hacer backup")
-            return False
-        
-        logger.info(f"Preparando backup de {len(keys_to_backup)} claves")
-        
-        # Crear archivo temporal con las claves
-        temp_file = output_path + '.tmp'
-        backup_data = {
-            'backup_date': datetime.now().isoformat(),
-            'environment': settings.ENVIRONMENT,
-            'app_name': settings.APP_NAME,
-            'keys': keys_to_backup,
-            'metadata': {
-                'total_keys': len(keys_to_backup),
-                'missing_keys': [k for k in ['ENCRYPTION_KEY', 'SECRET_KEY'] if not keys_to_backup.get(k)]
-            }
-        }
-        
-        # Guardar en un archivo JSON temporal
-        with open(temp_file, 'w') as f:
-            json.dump(backup_data, f, indent=2)
-        
-        # Crear ZIP (sin contraseña por ahora, ya que zipfile de Python no soporta encriptación nativa)
-        logger.info(f"Creando archivo ZIP: {output_path}")
-        with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            zipf.write(temp_file, arcname='encryption_keys.json')
+        # Guardar el archivo JSON
+        logger.info(f"Guardando backup de claves en: {output_path}")
+        with open(output_path, 'w') as f:
+            json.dump(backup_data, f, indent=2, sort_keys=True)
             
-            # Añadir un README
-            readme_content = f"""# Backup de Claves de Encriptación
-Fecha: {datetime.now().isoformat()}
-Ambiente: {settings.ENVIRONMENT}
-
-IMPORTANTE: Este archivo contiene claves sensibles. Manténgalo seguro.
-
-Para restaurar:
-1. Extraiga encryption_keys.json
-2. Configure las variables de entorno según el contenido del archivo
-3. Reinicie la aplicación
-
-Total de claves respaldadas: {len(keys_to_backup)}
-"""
-            zipf.writestr('README.txt', readme_content)
-        
-        # Eliminar archivo temporal
-        os.remove(temp_file)
-        
+        # Establecer permisos restrictivos (solo lectura para el propietario)
+        try:
+            # En Windows, chmod tiene comportamiento limitado
+            os.chmod(output_path, stat.S_IRUSR | stat.S_IWUSR)  # 600 en Unix
+            logger.info("Permisos restrictivos establecidos en el archivo de backup")
+        except Exception as e:
+            logger.warning(f"No se pudieron establecer permisos restrictivos: {e}")
+            
         # Verificar que el archivo se creó
         if os.path.exists(output_path):
             file_size = os.path.getsize(output_path)
-            logger.info(f"Backup de claves completado. Tamaño: {file_size} bytes")
-            logger.warning("NOTA: El archivo ZIP no está encriptado. Considere encriptarlo manualmente o almacenarlo en un lugar seguro.")
+            logger.info(f"Backup completado exitosamente. Tamaño: {file_size} bytes")
+            logger.info(f"Archivo guardado en: {os.path.abspath(output_path)}")
+            logger.info(f"Total de claves respaldadas: {len(keys_to_backup)}")
+            
+            # Advertencia de seguridad
+            logger.warning("¡ADVERTENCIA! Este archivo contiene información ALTAMENTE SENSIBLE.")
+            logger.warning("Asegúrate de almacenarlo en un lugar seguro y eliminar copias no necesarias.")
+            
             return True
         else:
             logger.error("El archivo de backup no se creó")
             return False
             
     except Exception as e:
-        logger.error(f"Error durante el backup de claves: {e}")
-        # Limpiar archivo temporal si existe
-        temp_file = output_path + '.tmp'
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
+        logger.error(f"Error inesperado durante el backup de claves: {e}")
         return False
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Backup de claves de encriptación')
+    parser = argparse.ArgumentParser(description='Backup de claves de encriptación y secretos')
     parser.add_argument(
         '--output',
         type=str,
-        default=f'/data/backups/encryption_keys_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip',
-        help='Ruta del archivo ZIP de backup (default: /data/backups/encryption_keys_YYYYMMDD_HHMMSS.zip)'
+        default=f'./backups/encryption_keys_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json',
+        help='Ruta del archivo de backup (default: ./backups/encryption_keys_YYYYMMDD_HHMMSS.json)'
     )
     
     args = parser.parse_args()

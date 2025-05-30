@@ -38,8 +38,20 @@ def backup_database(output_path: str):
         # Crear el directorio si no existe
         output_dir = os.path.dirname(output_path)
         if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            logger.info(f"Directorio de backup creado/verificado: {output_dir}")
+            try:
+                os.makedirs(output_dir, exist_ok=True)
+                logger.info(f"Directorio de backup creado/verificado: {output_dir}")
+            except PermissionError as e:
+                logger.error(f"Sin permisos para crear el directorio {output_dir}: {e}")
+                # Intentar usar /tmp como alternativa
+                temp_output_path = os.path.join('/tmp', os.path.basename(output_path))
+                logger.info(f"Intentando usar ruta alternativa: {temp_output_path}")
+                output_path = temp_output_path
+                output_dir = os.path.dirname(output_path)
+                os.makedirs(output_dir, exist_ok=True)
+            except Exception as e:
+                logger.error(f"Error creando directorio de backup: {e}")
+                return False
         
         # Ejecutar pg_dump
         logger.info(f"Iniciando backup de base de datos a: {output_path}")
@@ -70,6 +82,7 @@ def backup_database(output_path: str):
             if os.path.exists(output_path):
                 file_size = os.path.getsize(output_path)
                 logger.info(f"Backup completado exitosamente. Tamaño: {file_size} bytes")
+                logger.info(f"Archivo guardado en: {os.path.abspath(output_path)}")
                 return True
             else:
                 logger.error("El archivo de backup no se creó")
@@ -82,12 +95,19 @@ def backup_database(output_path: str):
         logger.error("pg_dump no encontrado. Intentando método alternativo...")
         # Método alternativo: Guardar un archivo con información básica
         try:
+            # Asegurar que usamos una ruta escribible
+            if output_path.startswith('/data/'):
+                output_path = output_path.replace('/data/', './backups/', 1)
+                output_dir = os.path.dirname(output_path)
+                os.makedirs(output_dir, exist_ok=True)
+                
             with open(output_path, 'w') as f:
                 f.write(f"# Backup metadata - {datetime.now().isoformat()}\n")
                 f.write(f"# DATABASE_URL configurada: {'Sí' if settings.DATABASE_URL else 'No'}\n")
                 f.write(f"# Nota: pg_dump no disponible en el sistema\n")
                 f.write(f"# Este es un archivo placeholder. Considera usar pg_dump en un contenedor con PostgreSQL client instalado.\n")
-            logger.warning("Creado archivo placeholder. pg_dump no está disponible en el sistema.")
+            logger.warning(f"Creado archivo placeholder en: {os.path.abspath(output_path)}")
+            logger.warning("pg_dump no está disponible en el sistema.")
             return True
         except Exception as e:
             logger.error(f"Error creando archivo placeholder: {e}")
@@ -102,8 +122,8 @@ def main():
     parser.add_argument(
         '--output',
         type=str,
-        default=f'/data/backups/database_{datetime.now().strftime("%Y%m%d_%H%M%S")}.bak',
-        help='Ruta del archivo de backup (default: /data/backups/database_YYYYMMDD_HHMMSS.bak)'
+        default=f'./backups/database_{datetime.now().strftime("%Y%m%d_%H%M%S")}.bak',
+        help='Ruta del archivo de backup (default: ./backups/database_YYYYMMDD_HHMMSS.bak)'
     )
     
     args = parser.parse_args()

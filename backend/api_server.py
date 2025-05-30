@@ -137,7 +137,7 @@ async def trigger_database_backup(background_tasks: BackgroundTasks):
     Endpoint para disparar el script de backup de la base de datos.
     Protegido por INTERNAL_API_KEY.
     """
-    command = f"python -m scripts.backup_database --output /data/backups/database_$(date +%Y%m%d).bak"
+    command = f"python -m scripts.backup_database --output ./backups/database_$(date +%Y%m%d_%H%M%S).bak"
     logger.info(f"Iniciando backup de base de datos con comando: {command}")
 
     async def run_backup():
@@ -166,7 +166,7 @@ async def trigger_keys_backup(background_tasks: BackgroundTasks):
     Endpoint para disparar el script de backup de las claves de encriptación.
     Protegido por INTERNAL_API_KEY.
     """
-    command = f"python -m scripts.backup_encryption_keys --output /data/backups/encryption_keys_$(date +%Y%m%d).zip"
+    command = f"python -m scripts.backup_encryption_keys --output ./backups/encryption_keys_$(date +%Y%m%d_%H%M%S).json"
     logger.info(f"Iniciando backup de claves de encriptación con comando: {command}")
 
     async def run_backup():
