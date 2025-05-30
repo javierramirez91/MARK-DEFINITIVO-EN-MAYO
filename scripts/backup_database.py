@@ -24,6 +24,12 @@ def backup_database(output_path: str):
         output_path: Ruta donde guardar el archivo de backup
     """
     try:
+        # Debug: mostrar variables de entorno relacionadas con DB
+        logger.info("=== Debug de variables de entorno ===")
+        logger.info(f"DATABASE_URL presente en settings: {'Sí' if hasattr(settings, 'DATABASE_URL') else 'No'}")
+        logger.info(f"DATABASE_URL valor: {'[CONFIGURADA]' if settings.DATABASE_URL else '[NO CONFIGURADA]'}")
+        logger.info(f"DATABASE_URL en os.environ: {'Sí' if 'DATABASE_URL' in os.environ else 'No'}")
+        
         # Verificar que tenemos la DATABASE_URL
         if not settings.DATABASE_URL:
             logger.error("DATABASE_URL no está configurada")
