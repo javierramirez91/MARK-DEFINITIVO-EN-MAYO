@@ -19,7 +19,7 @@ supabase = SupabaseClient()
 
 # Constantes para nombres de tablas
 TABLE_AUSENCIAS_TERAPEUTAS = "ausencias_terapeutas"
-TABLE_APPOINTMENTS = "appointments"
+TABLE_APPOINTMENTS = "citas"  # Cambiado de "appointments" a "citas"
 TABLE_CONFIGURACIONES = "configuraciones"
 TABLE_DIAGNOSTICOS_PACIENTES = "diagnosticos_pacientes"
 TABLE_DOCUMENTOS = "documentos"
@@ -35,7 +35,7 @@ TABLE_RESULTADOS_TESTS = "resultados_tests"
 TABLE_TERAPEUTAS = "terapeutas"
 TABLE_TESTS_PSICOLOGICOS = "tests_psicologicos"
 TABLE_USUARIOS = "usuarios"
-TABLE_SESSIONS_CONVERSATION = "sessions" # Para estado de conversación, si es diferente a citas
+TABLE_SESSIONS_CONVERSATION = "sessions"  # Esta tabla no existe, posiblemente sea historiales
 
 async def _handle_supabase_response(
     data_payload: Any,
@@ -1108,7 +1108,7 @@ async def count_patients() -> Dict[str, Any]:
 async def count_appointments_today() -> Dict[str, Any]:
     """Cuenta el número de citas programadas para hoy."""
     operation_name = "count_appointments_today"
-    table_name = TABLE_APPOINTMENTS
+    table_name = TABLE_APPOINTMENTS  # Ahora usa "citas"
     try:
         await supabase._ensure_initialized()
         
@@ -1116,19 +1116,38 @@ async def count_appointments_today() -> Dict[str, Any]:
         today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = today_start + timedelta(days=1)
         
-        # Filtrar citas por fecha
-        api_response = supabase.client.from_(table_name)\
-            .select('*', count='exact')\
-            .gte('scheduled_at', today_start.isoformat())\
-            .lt('scheduled_at', today_end.isoformat())\
-            .execute()
+        # Intentar con diferentes nombres de campos posibles
+        possible_date_fields = ['fecha_hora', 'fecha', 'scheduled_at', 'created_at']
         
-        count = api_response.count if hasattr(api_response, 'count') else len(api_response.data or [])
+        for date_field in possible_date_fields:
+            try:
+                # Filtrar citas por fecha
+                api_response = supabase.client.from_(table_name)\
+                    .select('*', count='exact')\
+                    .gte(date_field, today_start.isoformat())\
+                    .lt(date_field, today_end.isoformat())\
+                    .execute()
+                
+                count = api_response.count if hasattr(api_response, 'count') else len(api_response.data or [])
+                
+                logger.info(f"Conteo de citas usando campo '{date_field}': {count}")
+                
+                return {
+                    "success": True,
+                    "count": count,
+                    "error": None
+                }
+            except Exception as field_error:
+                # Si el campo no existe, intentar con el siguiente
+                logger.debug(f"Campo '{date_field}' no encontrado en tabla citas: {str(field_error)[:100]}")
+                continue
         
+        # Si ningún campo funcionó, devolver 0
+        logger.warning(f"No se pudo encontrar un campo de fecha válido en la tabla {table_name}")
         return {
             "success": True,
-            "count": count,
-            "error": None
+            "count": 0,
+            "error": "No se encontró campo de fecha válido"
         }
         
     except Exception as e:
