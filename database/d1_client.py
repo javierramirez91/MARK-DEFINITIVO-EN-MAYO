@@ -315,7 +315,7 @@ async def delete_db_user(user_id: str) -> Dict[str, Any]:
         return {"success": False, "error": f"Error inesperado: {type(e).__name__}", "details": str(e)}
 
 # --- Funciones para Pacientes ---
-async def get_all_patients(limit=1000, offset=0, sort_by="name", order="asc") -> Dict[str, Any]: # Corregido default sort_by
+async def get_all_patients(limit=1000, offset=0, sort_by="nombre", order="asc") -> Dict[str, Any]: # Corregido default sort_by de 'name' a 'nombre'
     operation_name = "get_all_patients"
     table_name = TABLE_PACIENTES
     logger.info(f"Consultando tabla '{table_name}', sort_by={sort_by}, order={order}.")
@@ -501,14 +501,21 @@ async def delete_patient(patient_id: str) -> Dict[str, Any]:
         return {"success": False, "error": f"Error inesperado: {type(e).__name__}", "details": str(e)}
 
 # --- Funciones para Citas (Appointments) ---
-async def get_all_appointments(limit=1000, offset=0, sort_by="scheduled_date", order="desc") -> Dict[str, Any]: # Cambiado nombre scheduled_at a scheduled_date si aplica
+async def get_all_appointments(limit=1000, offset=0, sort_by="created_at", order="desc") -> Dict[str, Any]: # Cambiado scheduled_date a created_at que sabemos que existe
     operation_name = "get_all_appointments"
     table_name = TABLE_APPOINTMENTS
     logger.info(f"Consultando tabla '{table_name}', sort_by={sort_by}, order={order}.")
     try:
         await supabase._ensure_initialized()
-        api_response = supabase.client.from_(table_name).select("*").order(sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1).execute()
-
+        # Si el campo solicitado no existe, usar created_at como fallback
+        safe_sort_by = sort_by
+        if sort_by in ["scheduled_date", "scheduled_at", "fecha", "fecha_hora"]:
+            # Intentar con created_at que sabemos que existe
+            safe_sort_by = "created_at"
+            logger.warning(f"Campo '{sort_by}' no existe en tabla citas, usando 'created_at'")
+        
+        api_response = supabase.client.from_(table_name).select("*").order(safe_sort_by, desc=(order.lower() == "desc")).range(offset, offset + limit - 1).execute()
+        
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
             

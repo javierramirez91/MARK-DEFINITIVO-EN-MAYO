@@ -19,37 +19,37 @@
             <div class="col-md-3">
                 <label for="status" class="form-label">Estado</label>
                 <select class="form-select" id="status" name="status">
-                    <option value="" {% if not request.args.get('status') %}selected{% endif %}>Todos</option>
-                    <option value="scheduled" {% if request.args.get('status') == 'scheduled' %}selected{% endif %}>Programadas</option>
-                    <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completadas</option>
-                    <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Canceladas</option>
+                    <option value="" {% if not request.query_params.get('status') %}selected{% endif %}>Todos</option>
+                    <option value="scheduled" {% if request.query_params.get('status') == 'scheduled' %}selected{% endif %}>Programadas</option>
+                    <option value="completed" {% if request.query_params.get('status') == 'completed' %}selected{% endif %}>Completadas</option>
+                    <option value="cancelled" {% if request.query_params.get('status') == 'cancelled' %}selected{% endif %}>Canceladas</option>
                 </select>
             </div>
             
             <div class="col-md-3">
                 <label for="session_type" class="form-label">Tipo</label>
                 <select class="form-select" id="session_type" name="session_type">
-                    <option value="" {% if not request.args.get('session_type') %}selected{% endif %}>Todos</option>
-                    <option value="individual" {% if request.args.get('session_type') == 'individual' %}selected{% endif %}>Individual</option>
-                    <option value="couple" {% if request.args.get('session_type') == 'couple' %}selected{% endif %}>Pareja</option>
-                    <option value="family" {% if request.args.get('session_type') == 'family' %}selected{% endif %}>Familiar</option>
+                    <option value="" {% if not request.query_params.get('session_type') %}selected{% endif %}>Todos</option>
+                    <option value="individual" {% if request.query_params.get('session_type') == 'individual' %}selected{% endif %}>Individual</option>
+                    <option value="couple" {% if request.query_params.get('session_type') == 'couple' %}selected{% endif %}>Pareja</option>
+                    <option value="family" {% if request.query_params.get('session_type') == 'family' %}selected{% endif %}>Familiar</option>
                 </select>
             </div>
             
             <div class="col-md-3">
                 <label for="date_from" class="form-label">Desde</label>
-                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}">
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.query_params.get('date_from', '') }}">
             </div>
             
             <div class="col-md-3">
                 <label for="date_to" class="form-label">Hasta</label>
-                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}">
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.query_params.get('date_to', '') }}">
             </div>
             
             <div class="col-md-6">
                 <label for="search" class="form-label">Buscar</label>
                 <div class="input-group">
-                    <input type="text" class="form-control" id="search" name="search" placeholder="Nombre del paciente, terapeuta..." value="{{ request.args.get('search', '') }}">
+                    <input type="text" class="form-control" id="search" name="search" placeholder="Nombre del paciente, terapeuta..." value="{{ request.query_params.get('search', '') }}">
                     <button class="btn btn-outline-secondary" type="submit">
                         <i class="bi bi-search"></i>
                     </button>
@@ -59,9 +59,9 @@
             <div class="col-md-3">
                 <label for="modality" class="form-label">Modalidad</label>
                 <select class="form-select" id="modality" name="modality">
-                    <option value="" {% if not request.args.get('modality') %}selected{% endif %}>Todas</option>
-                    <option value="in_person" {% if request.args.get('modality') == 'in_person' %}selected{% endif %}>Presencial</option>
-                    <option value="online" {% if request.args.get('modality') == 'online' %}selected{% endif %}>Online</option>
+                    <option value="" {% if not request.query_params.get('modality') %}selected{% endif %}>Todas</option>
+                    <option value="in_person" {% if request.query_params.get('modality') == 'in_person' %}selected{% endif %}>Presencial</option>
+                    <option value="online" {% if request.query_params.get('modality') == 'online' %}selected{% endif %}>Online</option>
                 </select>
             </div>
             
@@ -78,19 +78,19 @@
 <!-- Pestañas para diferentes vistas -->
 <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
-        <a class="nav-link {% if request.args.get('view', 'upcoming') == 'upcoming' %}active{% endif %}" href="?view=upcoming">Próximas</a>
+        <a class="nav-link {% if request.query_params.get('view', 'upcoming') == 'upcoming' %}active{% endif %}" href="?view=upcoming">Próximas</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {% if request.args.get('view') == 'today' %}active{% endif %}" href="?view=today">Hoy</a>
+        <a class="nav-link {% if request.query_params.get('view') == 'today' %}active{% endif %}" href="?view=today">Hoy</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {% if request.args.get('view') == 'week' %}active{% endif %}" href="?view=week">Esta Semana</a>
+        <a class="nav-link {% if request.query_params.get('view') == 'week' %}active{% endif %}" href="?view=week">Esta Semana</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {% if request.args.get('view') == 'past' %}active{% endif %}" href="?view=past">Pasadas</a>
+        <a class="nav-link {% if request.query_params.get('view') == 'past' %}active{% endif %}" href="?view=past">Pasadas</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {% if request.args.get('view') == 'all' %}active{% endif %}" href="?view=all">Todas</a>
+        <a class="nav-link {% if request.query_params.get('view') == 'all' %}active{% endif %}" href="?view=all">Todas</a>
     </li>
 </ul>
 
@@ -194,19 +194,19 @@
         <nav aria-label="Paginación de sesiones">
             <ul class="pagination justify-content-center mt-4">
                 <li class="page-item {% if current_page == 1 %}disabled{% endif %}">
-                    <a class="page-link" href="{{ update_query_params(request.args, page=current_page-1) }}" aria-label="Anterior">
+                    <a class="page-link" href="{{ update_query_params(request.query_params, page=current_page-1) }}" aria-label="Anterior">
                         <span aria-hidden="true">&laquo;</span>
                     </a>
                 </li>
                 
                 {% for page in range(1, total_pages + 1) %}
                 <li class="page-item {% if page == current_page %}active{% endif %}">
-                    <a class="page-link" href="{{ update_query_params(request.args, page=page) }}">{{ page }}</a>
+                    <a class="page-link" href="{{ update_query_params(request.query_params, page=page) }}">{{ page }}</a>
                 </li>
                 {% endfor %}
                 
                 <li class="page-item {% if current_page == total_pages %}disabled{% endif %}">
-                    <a class="page-link" href="{{ update_query_params(request.args, page=current_page+1) }}" aria-label="Siguiente">
+                    <a class="page-link" href="{{ update_query_params(request.query_params, page=current_page+1) }}" aria-label="Siguiente">
                         <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>

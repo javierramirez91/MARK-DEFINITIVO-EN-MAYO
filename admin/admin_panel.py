@@ -278,6 +278,23 @@ if not os.path.exists("admin/static"): os.makedirs("admin/static", exist_ok=True
 templates = Jinja2Templates(directory="admin/templates")
 app.mount("/static", StaticFiles(directory="admin/static"), name="static")
 
+# Función helper para templates
+def update_query_params(current_params, **kwargs):
+    """
+    Actualiza los parámetros de consulta con nuevos valores.
+    Útil para mantener filtros al cambiar de página.
+    """
+    params = dict(current_params)
+    params.update(kwargs)
+    # Eliminar parámetros vacíos
+    params = {k: v for k, v in params.items() if v}
+    if params:
+        return '?' + '&'.join(f'{k}={v}' for k, v in params.items())
+    return ''
+
+# Registrar la función en el entorno de Jinja2
+templates.env.globals['update_query_params'] = update_query_params
+
 # Configuración de seguridad
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
