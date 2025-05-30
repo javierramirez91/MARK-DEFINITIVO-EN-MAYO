@@ -657,18 +657,13 @@ async def get_all_notifications(limit: int = 1000, offset: int = 0, sort_by="cre
 async def get_pending_notifications(limit: int = 10, table_name: str = TABLE_NOTIFICATIONS) -> Dict[str, Any]: # Añadido table_name como parámetro
     operation_name = "get_pending_notifications"
     # table_name es ahora un parámetro, pero default a TABLE_NOTIFICATIONS
-    logger.info(f"Consultando notificaciones pendientes en tabla '{table_name}'. (CONSULTA DE DIAGNÓSTICO SIMPLIFICADA)") # Modificado para log
+    logger.info(f"Consultando notificaciones pendientes en tabla '{table_name}'.") # Revertido el log
     try:
         await supabase._ensure_initialized()
         
-        # ----- INICIO DE CAMBIO PARA DIAGNÓSTICO -----
-        # Consulta original comentada:
-        # api_response = supabase.client.from_(table_name).select("*").eq("status", "pendiente").order("created_at", desc=False).limit(limit).execute()
-        
-        # Nueva consulta simplificada para diagnóstico:
-        logger.warning("Ejecutando consulta de diagnóstico simplificada para get_pending_notifications.")
-        api_response = await supabase.client.from_(table_name).select("id").limit(1).execute() 
-        # ----- FIN DE CAMBIO PARA DIAGNÓSTICO -----
+        # ----- REVERTIDO A CONSULTA ORIGINAL -----
+        api_response = await supabase.client.from_(table_name).select("*").eq("status", "pendiente").order("created_at", desc=False).limit(limit).execute()
+        # ----- FIN DE REVERSIÓN -----
 
         if isinstance(api_response.data, dict) and 'message' in api_response.data and 'code' in api_response.data:
             return await _handle_supabase_response(None, operation_name, table_name, error_obj=api_response.data)
