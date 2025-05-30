@@ -18,6 +18,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError
 import httpx
 import pytz
+import asyncio
+import subprocess
 
 # Configuración y logging
 from core.config import settings, logger
@@ -78,6 +80,14 @@ class PatientUpdatePayload(BaseModel):
 
 # --- Funciones Auxiliares ---
 
+async def verify_internal_api_key(api_key: str = Query(..., description="Internal API key for authorized access")):
+    if not settings.INTERNAL_API_KEY:
+        logger.error("INTERNAL_API_KEY no está configurada en el servidor.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server configuration error")
+    if api_key != settings.INTERNAL_API_KEY:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or missing internal API key")
+    return True
+
 async def get_translation(language: str, key: str, **kwargs) -> str:
     # ... (código existente)
     ...
@@ -120,6 +130,63 @@ async def receive_whatsapp_webhook(request: Request, background_tasks: Backgroun
 # @apirouter.get("/admin/sessions") -> para depuración, quizá quitar
 # async def get_all_sessions():
 #     ...
+
+@apirouter.post("/admin/trigger-backup-db", dependencies=[Depends(verify_internal_api_key)])
+async def trigger_database_backup(background_tasks: BackgroundTasks):
+    """
+    Endpoint para disparar el script de backup de la base de datos.
+    Protegido por INTERNAL_API_KEY.
+    """
+    command = f"python -m scripts.backup_database --output /data/backups/database_$(date +%Y%m%d).bak"
+    logger.info(f"Iniciando backup de base de datos con comando: {command}")
+
+    async def run_backup():
+        try:
+            # Usar asyncio.create_subprocess_shell para ejecución no bloqueante
+            process = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await process.communicate()
+
+            if process.returncode == 0:
+                logger.info(f"Backup de base de datos completado exitosamente. Salida: {stdout.decode() if stdout else 'No stdout'}")
+            else:
+                logger.error(f"Error durante el backup de base de datos. Código: {process.returncode}. Error: {stderr.decode() if stderr else 'No stderr'}. Salida: {stdout.decode() if stdout else 'No stdout'}")
+        except Exception as e:
+            logger.exception(f"Excepción al ejecutar el script de backup de base de datos: {e}")
+
+    background_tasks.add_task(run_backup)
+    return {"status": "success", "message": "Database backup process initiated in background."}
+
+@apirouter.post("/admin/trigger-backup-keys", dependencies=[Depends(verify_internal_api_key)])
+async def trigger_keys_backup(background_tasks: BackgroundTasks):
+    """
+    Endpoint para disparar el script de backup de las claves de encriptación.
+    Protegido por INTERNAL_API_KEY.
+    """
+    command = f"python -m scripts.backup_encryption_keys --output /data/backups/encryption_keys_$(date +%Y%m%d).zip"
+    logger.info(f"Iniciando backup de claves de encriptación con comando: {command}")
+
+    async def run_backup():
+        try:
+            process = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await process.communicate()
+
+            if process.returncode == 0:
+                logger.info(f"Backup de claves de encriptación completado exitosamente. Salida: {stdout.decode() if stdout else 'No stdout'}")
+            else:
+                logger.error(f"Error durante el backup de claves de encriptación. Código: {process.returncode}. Error: {stderr.decode() if stderr else 'No stderr'}. Salida: {stdout.decode() if stdout else 'No stdout'}")
+        except Exception as e:
+            logger.exception(f"Excepción al ejecutar el script de backup de claves: {e}")
+
+    background_tasks.add_task(run_backup)
+    return {"status": "success", "message": "Encryption keys backup process initiated in background."}
 
 @apirouter.post("/admin/cleanup_sessions", status_code=status.HTTP_204_NO_CONTENT)
 async def cleanup_expired_sessions():

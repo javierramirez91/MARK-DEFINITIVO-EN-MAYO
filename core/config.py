@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     ZOOM_S2S_CLIENT_SECRET: Optional[str] = None
     ZOOM_CLIENT_SECRET: Optional[str] = None # Alias para ZOOM_S2S_CLIENT_SECRET
 
+    # Clave API para operaciones internas (ej. cron jobs)
+    INTERNAL_API_KEY: Optional[str] = None
+
     # Contacto Emergencia
     EMERGENCY_CONTACT: Optional[str] = None # Número WhatsApp para notificaciones
 
