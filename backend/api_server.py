@@ -105,6 +105,7 @@ async def process_message(phone_number: str, message_text: str, session_data: Di
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": message_text})
+    logger.info(f"DEBUG: System Prompt a punto de ser enviado: {system_prompt[:100]}...")
     respuesta_ia = await generate_chat_response(messages, system_prompt=system_prompt)
     logger.info(f"Respuesta generada por la IA: '{respuesta_ia['message']['content']}'")
 
