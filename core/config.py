@@ -157,6 +157,8 @@ class Settings(BaseSettings):
         env_file_encoding = 'utf-8'
         extra = 'ignore'
 
+    HTTPX_TIMEOUT: float = 30.0
+
 # Instanciar la configuración global
 # Pydantic leerá las variables de entorno y .env al crear la instancia
 try:

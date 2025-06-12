@@ -121,7 +121,7 @@ async def send_whatsapp_message_meta(
     
     try:
         # Usar httpx.AsyncClient para la solicitud
-        async with httpx.AsyncClient(timeout=settings.get("HTTPX_TIMEOUT", 30.0)) as client:
+        async with httpx.AsyncClient(timeout=settings.HTTPX_TIMEOUT) as client:
             response = await client.post(api_url, headers=headers, json=payload)
             response.raise_for_status() # Lanza excepción para errores HTTP >= 400
             response_data = response.json()
@@ -417,7 +417,7 @@ async def download_media_meta(media_id: str) -> Tuple[Optional[bytes], Optional[
     mime_type = None
     
     try:
-        async with httpx.AsyncClient(timeout=settings.get("HTTPX_TIMEOUT", 15.0)) as client:
+        async with httpx.AsyncClient(timeout=settings.HTTPX_TIMEOUT) as client:
             response_info = await client.get(url_info_api, headers=headers)
             response_info.raise_for_status()
             media_info = response_info.json()
@@ -447,7 +447,7 @@ async def download_media_meta(media_id: str) -> Tuple[Optional[bytes], Optional[
          
     try:
          # Nota: La URL devuelta por Meta requiere el mismo token de autorización
-         async with httpx.AsyncClient(timeout=settings.get("HTTPX_DOWNLOAD_TIMEOUT", 60.0)) as download_client:
+         async with httpx.AsyncClient(timeout=settings.HTTPX_TIMEOUT) as download_client:
              # Usar stream=True si el archivo es grande, pero para muchos casos .content es suficiente
              # response_download = await download_client.get(media_url, headers=headers, follow_redirects=True)
              # response_download.raise_for_status()
