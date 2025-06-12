@@ -105,7 +105,7 @@ async def process_message(phone_number: str, message_text: str, session_data: Di
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": message_text})
-    respuesta_ia = await generate_chat_response(messages, system_prompt=system_prompt)
+    respuesta_ia = await generate_chat_response(messages)
     logger.info(f"Respuesta generada por la IA: '{respuesta_ia['message']['content']}'")
 
 async def handle_audio_message(phone_number: str, media_id: str, session_data: Dict[str, Any]):
