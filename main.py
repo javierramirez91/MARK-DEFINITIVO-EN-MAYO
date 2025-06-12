@@ -28,6 +28,8 @@ from fastapi.responses import HTMLResponse, PlainTextResponse # Añadido PlainTe
 # from fastapi.responses import JSONResponse # No usado
 
 from core.config import settings, logger, verify_config
+logger.info(f"[DEBUG] WHATSAPP_ACCESS_TOKEN: {settings.WHATSAPP_ACCESS_TOKEN}")
+logger.info(f"[DEBUG] WHATSAPP_PHONE_NUMBER_ID: {settings.WHATSAPP_PHONE_NUMBER_ID}")
 from database.d1_client import get_pending_notifications, update_notification_status
 from services.whatsapp import send_whatsapp_message
 from backend.api_server import apirouter
