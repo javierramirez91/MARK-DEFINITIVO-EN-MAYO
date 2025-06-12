@@ -18,6 +18,7 @@ from typing import Dict, Any, Optional, Tuple # Eliminado List
 # Importar configuración necesaria
 # from core.config import ApiConfig, logger, settings # ApiConfig no usada
 from core.config import logger, settings # ApiConfig eliminada
+from ai.gemma.client import generate_chat_response
 
 # --- Funciones eliminadas relacionadas con Twilio ---
 # TwilioClientSingleton
@@ -494,14 +495,18 @@ async def process_incoming_message(message_data: Dict[str, Any], metadata: Dict[
     if message_type == "text":
         body = message_data.get("text", {}).get("body", "")
         logger.info(f"Mensaje de texto de {contact_name} ({from_number}): {body}")
-        # Aquí iría la lógica para interactuar con la IA, buscar en BD, etc.
-        # Ejemplo: enviar a la IA
-        # response_from_ai = await get_ai_response(from_number, body)
-        # await send_whatsapp_message(from_number, response_from_ai)
-        
-        # Respuesta automática de ejemplo
-        await send_auto_response(from_number, body)
-        return {"success": True, "action": "auto_response_sent", "from": from_number}
+        # Lógica IA: preparar mensajes
+        messages = [{"role": "user", "content": body}]
+        ai_response = await generate_chat_response(messages)
+        if ai_response.get("success"):
+            respuesta_ia = ai_response["message"]["content"]
+            logger.info(f"Respuesta generada por la IA: {respuesta_ia}")
+            await send_whatsapp_message(from_number, respuesta_ia)
+            return {"success": True, "action": "ia_response_sent", "from": from_number}
+        else:
+            logger.error(f"Error al generar respuesta IA: {ai_response.get('error')}")
+            await send_whatsapp_message(from_number, "Lo siento, no pude procesar tu mensaje en este momento.")
+            return {"success": False, "error": "ia_generation_failed", "from": from_number}
 
     # Mensaje de imagen
     elif message_type == "image":
