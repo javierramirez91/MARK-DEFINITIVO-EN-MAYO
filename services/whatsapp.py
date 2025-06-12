@@ -363,23 +363,9 @@ async def handle_meta_webhook(request_data: Dict[str, Any]) -> Dict[str, Any]:
                     # Aquí se procesaría el mensaje y se generaría una respuesta
                     # Ejemplo simplificado:
                     if message_type == "text" and message_data.get("body"):
-                        # Aquí iría el procesamiento real del mensaje
-                        # Por ahora, solo registramos lo que recibimos
                         logger.info(f"Mensaje de texto recibido de {from_number}: {message_data.get('body')}")
-                        
-                        # En un sistema real, aquí llamaríamos a la lógica de procesamiento
-                        # por ejemplo: 
-                        # response = await process_incoming_message(message_data)
-                        
-                        # Ejemplo de respuesta automática simple (SOLO PARA ILUSTRACIÓN)
-                        if getattr(settings, "ENVIRONMENT", "development") == "development":
-                            # Solo responder automáticamente en desarrollo
-                            asyncio.create_task(
-                                send_auto_response(
-                                    from_number,
-                                    f"Hemos recibido tu mensaje: '{message_data.get('body')[:20]}...'. En breve te atenderemos."
-                                )
-                            )
+                        # Llamar a la lógica principal de procesamiento y respuesta
+                        await process_incoming_message(message_data, value)
                     
                     processing_results.append(message_data)
         
