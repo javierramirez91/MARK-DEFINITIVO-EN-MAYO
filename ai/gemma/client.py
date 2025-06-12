@@ -120,11 +120,12 @@ async def generate_chat_response(
         duration_ms = (end_time - start_time).total_seconds() * 1000
 
         response_content = response.content
-        # Extraer metadatos (puede variar según el modelo/proveedor)
-        usage_metadata = response.response_metadata.get('token_usage', None)
-        finish_reason = response.response_metadata.get('finish_reason', None)
-        response_id = response.response_metadata.get('id', None) # O 'run_id' dependiendo de la versión
-        model_name_used = response.response_metadata.get('model_name', llm.model_name)
+        # Extraer metadatos de uso de manera segura
+        usage_metadata = getattr(response, 'usage_metadata', None)
+        # Los siguientes campos pueden no estar disponibles, así que los dejamos como None si no existen
+        finish_reason = getattr(response, 'finish_reason', None)
+        response_id = getattr(response, 'id', None)
+        model_name_used = getattr(response, 'model_name', llm.model_name)
 
         logger.info(f"Respuesta recibida de LLM ({model_name_used}) en {duration_ms:.0f} ms. Usage: {usage_metadata}")
         
