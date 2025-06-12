@@ -99,27 +99,15 @@ async def get_or_create_session(phone_number: str) -> Dict[str, Any]:
 async def process_message(phone_number: str, message_text: str, session_data: Dict[str, Any]):
     logger.info(f"Iniciando generación de respuesta para el mensaje: '{message_text}'")
     conversation_history = []  # TODO: cargar historial real si existe
-
-    # 1. Selección del playbook y system_prompt
     playbook_type, system_prompt = select_playbook(message_text, conversation_history)
-    logger.info(f"Playbook seleccionado: {playbook_type}. System Prompt cargado: {system_prompt[:150]}...")
-
-    # 2. Construcción de la lista de mensajes para la IA
-    messages_for_llm = []
+    logger.info(f"Playbook seleccionado: {playbook_type}. Primeros 100 chars del prompt: {system_prompt[:100]}")
+    messages = []
     if system_prompt:
-        messages_for_llm.append({"role": "system", "content": system_prompt})
-    messages_for_llm.append({"role": "user", "content": message_text})
-
-    # 3. Log de paranoia para asegurar que el prompt se va a enviar
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": message_text})
     logger.info(f"DEBUG: System Prompt a punto de ser enviado: {system_prompt[:100]}...")
-
-    # 4. LLAMADA CORRECTA Y FORZADA A LA IA
-    ia_response_data = await generate_chat_response(
-        messages=messages_for_llm,
-        system_prompt=system_prompt  # <-- ¡¡ESTO ES CRÍTICO!!
-    )
-
-    logger.info(f"Respuesta generada por la IA: '{ia_response_data['message']['content']}'")
+    respuesta_ia = await generate_chat_response(messages, system_prompt=system_prompt)
+    logger.info(f"Respuesta generada por la IA: '{respuesta_ia['message']['content']}'")
 
 async def handle_audio_message(phone_number: str, media_id: str, session_data: Dict[str, Any]):
     # ... (código existente)
