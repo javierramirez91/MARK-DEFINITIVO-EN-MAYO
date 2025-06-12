@@ -92,19 +92,17 @@ async def generate_chat_response(
     lc_messages = []
     if system_prompt:
         lc_messages.append(SystemMessage(content=system_prompt))
-    
     for msg in messages:
         role = msg.get("role")
         content = msg.get("content")
         if role == "user" and content:
             lc_messages.append(HumanMessage(content=content))
         elif role == "assistant" and content:
-            # Nota: Langchain espera AIMessage, pero ChatOpenAI lo maneja internamente.
-            # Si usáramos otra abstracción, podríamos necesitar convertir a AIMessage.
-            lc_messages.append(SystemMessage(content=content)) # Workaround si AIMessage no está importado o causa lío
-            # O idealmente: from langchain_core.messages import AIMessage; lc_messages.append(AIMessage(content=content))
+            lc_messages.append(SystemMessage(content=content))
         else:
-             logger.warning(f"Mensaje omitido por rol/contenido inválido: {msg}")
+            logger.warning(f"Mensaje omitido por rol/contenido inválido: {msg}")
+    # Log de depuración para ver los mensajes enviados a la IA
+    logger.info(f"Enviando a la IA la siguiente lista de mensajes: {[{'role': getattr(m, 'type', type(m).__name__), 'content': m.content[:100]} for m in lc_messages]}")
 
     if not any(isinstance(m, HumanMessage) for m in lc_messages):
          logger.error("La lista de mensajes para Langchain no contiene ningún HumanMessage.")

@@ -98,26 +98,13 @@ async def get_or_create_session(phone_number: str) -> Dict[str, Any]:
 
 async def process_message(phone_number: str, message_text: str, session_data: Dict[str, Any]):
     logger.info(f"Iniciando generación de respuesta para el mensaje: '{message_text}'")
-    # Construir historial de conversación si lo tienes, aquí solo el mensaje actual
     conversation_history = []  # TODO: cargar historial real si existe
-    user_message = message_text
-    context = {
-        "messages": conversation_history + [{"role": "user", "content": user_message}],
-        "metadata": {},
-        "user": {},
-    }
-    playbook_type = playbook_selector.select_playbook(context)
-    if playbook_type.name == "GENERAL":
-        system_prompt = SYSTEM_PROMPT_1
-    elif playbook_type.name == "CRISIS":
-        system_prompt = SYSTEM_PROMPT_2
-    elif playbook_type.name == "SCHEDULING" or playbook_type.name == "PAYMENT":
-        system_prompt = SYSTEM_PROMPT_3
-    else:
-        system_prompt = SYSTEM_PROMPT_4
-    logger.info(f"Mensaje del usuario: '{user_message}'. Playbook seleccionado: {playbook_type.name}")
-    logger.info(f"Primeros 200 caracteres del prompt de sistema: {system_prompt[:200]}")
-    messages = [{"role": "user", "content": user_message}]
+    playbook_type, system_prompt = select_playbook(message_text, conversation_history)
+    logger.info(f"Playbook seleccionado: {playbook_type}. Primeros 100 chars del prompt: {system_prompt[:100]}")
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": message_text})
     respuesta_ia = await generate_chat_response(messages, system_prompt=system_prompt)
     logger.info(f"Respuesta generada por la IA: '{respuesta_ia['message']['content']}'")
 

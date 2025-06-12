@@ -5,6 +5,8 @@ Determina qué playbook utilizar en base al contexto de la conversación.
 
 import enum
 from typing import Dict, Any, List, Optional
+import re
+from core.config import logger
 
 class PlaybookType(enum.Enum):
     """Tipos de playbooks disponibles para el asistente Mark"""
@@ -31,42 +33,36 @@ class PlaybookType(enum.Enum):
         except:
             return cls.GENERAL
 
-def select_playbook(conversation_context: Dict[str, Any]) -> PlaybookType:
+def select_playbook(user_message: str, conversation_history=None):
     """
-    Selecciona el playbook más adecuado según el contexto de la conversación
-    
-    Args:
-        conversation_context: Contexto de la conversación, incluyendo historial y metadatos
-        
-    Returns:
-        Tipo de playbook a utilizar
+    Selecciona el playbook adecuado según el mensaje del usuario.
+    Devuelve (playbook_type, system_prompt)
     """
-    # Extraer información relevante del contexto
-    messages = conversation_context.get("messages", [])
-    metadata = conversation_context.get("metadata", {})
-    user_context = conversation_context.get("user", {})
-    
-    # Verificar flags de emergencia
-    if _contains_crisis_keywords(messages):
-        return PlaybookType.CRISIS
-    
-    # Verificar el propósito explícito si está definido
-    explicit_purpose = metadata.get("purpose")
-    if explicit_purpose:
-        return PlaybookType.from_string(explicit_purpose)
-    
-    # Analizar el contexto para determinar el playbook
-    if _is_scheduling_conversation(messages):
-        return PlaybookType.SCHEDULING
-    
-    if _is_payment_conversation(messages):
-        return PlaybookType.PAYMENT
-    
-    if _is_intake_conversation(messages, user_context):
-        return PlaybookType.INTAKE
-    
-    # Por defecto, usar el playbook general
-    return PlaybookType.GENERAL
+    from ai.gemma.prompts.playbook1 import SYSTEM_PROMPT as SYSTEM_PROMPT_1
+    from ai.claude.prompts.playbook2 import system_prompt as SYSTEM_PROMPT_2
+    from ai.claude.prompts.playbook3 import system_prompt as SYSTEM_PROMPT_3
+    from ai.claude.prompts.playbook4 import system_prompt as SYSTEM_PROMPT_4
+
+    msg = user_message.lower().strip()
+    # Playbook 2: Crisis/Urgencia
+    if any(word in msg for word in ["urgencia", "suicidio", "emergencia", "crisis", "ayuda urgente", "dina", "psicóloga de guardia"]):
+        logger.info(f"Mensaje del usuario: '{user_message}'. Playbook seleccionado: 2 (crisis)")
+        return 2, SYSTEM_PROMPT_2
+    # Playbook 3: Citas/Pagos
+    if any(word in msg for word in ["cita", "terapia", "hora", "psicólogo", "psicologa", "pagar", "pago", "reserva", "agenda", "turno"]):
+        logger.info(f"Mensaje del usuario: '{user_message}'. Playbook seleccionado: 3 (citas/pagos)")
+        return 3, SYSTEM_PROMPT_3
+    # Playbook 4: Seguridad
+    if any(word in msg for word in ["seguridad", "privacidad", "datos", "protección", "rgpd", "gdpr", "confidencial"]):
+        logger.info(f"Mensaje del usuario: '{user_message}'. Playbook seleccionado: 4 (seguridad)")
+        return 4, SYSTEM_PROMPT_4
+    # Playbook 1: Saludo o general
+    if re.match(r"^(hola|hello|bon dia|buenos días|hi|hey|qué tal|buenas|salut|السلام|مرحبا)", msg):
+        logger.info(f"Mensaje del usuario: '{user_message}'. Playbook seleccionado: 1 (saludo/identidad)")
+        return 1, SYSTEM_PROMPT_1
+    # Por defecto, playbook 1
+    logger.info(f"Mensaje del usuario: '{user_message}'. Playbook seleccionado: 1 (default)")
+    return 1, SYSTEM_PROMPT_1
 
 def _contains_crisis_keywords(messages: List[Dict[str, str]]) -> bool:
     """
