@@ -337,7 +337,21 @@ async def handle_meta_webhook(request_data: Dict[str, Any]) -> Dict[str, Any]:
                     
                     # Extraer contenido según el tipo de mensaje
                     if message_type == "text":
-                        message_data["body"] = message.get("text", {}).get("body", "")
+                        # Extraer correctamente el cuerpo del mensaje
+                        body = message.get("body", "")
+                        logger.info(f"Mensaje de texto de {contact_info.get('profile', {}).get('name', 'Usuario')} ({from_number}): {body}")
+                        # Lógica IA: preparar mensajes
+                        messages = [{"role": "user", "content": body}]
+                        ai_response = await generate_chat_response(messages)
+                        if ai_response.get("success"):
+                            respuesta_ia = ai_response["message"]["content"]
+                            logger.info(f"Respuesta generada por la IA: {respuesta_ia}")
+                            await send_whatsapp_message(from_number, respuesta_ia)
+                            return {"success": True, "action": "ia_response_sent", "from": from_number}
+                        else:
+                            logger.error(f"Error al generar respuesta IA: {ai_response.get('error')}")
+                            await send_whatsapp_message(from_number, "Lo siento, no pude procesar tu mensaje en este momento.")
+                            return {"success": False, "error": "ia_generation_failed", "from": from_number}
                     elif message_type == "image":
                         message_data["media_id"] = message.get("image", {}).get("id")
                         message_data["media_url"] = message.get("image", {}).get("url")
@@ -493,7 +507,7 @@ async def process_incoming_message(message_data: Dict[str, Any], metadata: Dict[
     
     # Mensaje de texto
     if message_type == "text":
-        body = message_data.get("text", {}).get("body", "")
+        body = message_data.get("body", "")
         logger.info(f"Mensaje de texto de {contact_name} ({from_number}): {body}")
         # Lógica IA: preparar mensajes
         messages = [{"role": "user", "content": body}]
