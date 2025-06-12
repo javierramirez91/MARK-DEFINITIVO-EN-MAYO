@@ -50,7 +50,7 @@ async def send_whatsapp_message_meta(
     Returns:
         Diccionario con información del mensaje enviado o error.
     """
-    logger.info(f"[Async] Enviando mensaje WhatsApp a {to}")
+    logger.info(f"Intentando enviar mensaje a {to}: '{message}'")
     
     # Obtener token de acceso y phone number ID
     access_token = getattr(settings, "WHATSAPP_ACCESS_TOKEN", None)
@@ -129,7 +129,7 @@ async def send_whatsapp_message_meta(
             # Meta API devuelve 200 OK incluso si hay errores a nivel de mensaje
             if "messages" in response_data and response_data["messages"]:
                 message_id = response_data["messages"][0].get("id")
-                logger.info(f"Mensaje enviado correctamente a {to}. Message ID: {message_id}")
+                logger.info(f"Mensaje enviado con éxito a {to}. Respuesta de Meta: {response_data}")
                 return {
                     "success": True,
                     "message_id": message_id,
@@ -182,8 +182,7 @@ async def send_whatsapp_message_meta(
          return {"success": False, "error": f"Error de conexión: {str(e)}", "to": to}
 
     except Exception as e:
-        # Otros errores inesperados
-        logger.exception(f"Excepción inesperada al enviar mensaje a {to}: {e}") # Usar logger.exception para traceback
+        logger.error(f"Excepción inesperada al enviar mensaje a {to}: {e}", exc_info=True)
         return {
             "success": False,
             "error": f"Excepción inesperada: {str(e)}",

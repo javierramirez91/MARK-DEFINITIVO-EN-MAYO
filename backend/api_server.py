@@ -97,8 +97,10 @@ async def get_or_create_session(phone_number: str) -> Dict[str, Any]:
     ...
 
 async def process_message(phone_number: str, message_text: str, session_data: Dict[str, Any]):
-    # ... (código existente)
-    ...
+    logger.info(f"Iniciando generación de respuesta para el mensaje: '{message_text}'")
+    messages = [{"role": "user", "content": message_text}]
+    respuesta_ia = await generate_chat_response(messages)
+    logger.info(f"Respuesta generada por la IA: '{respuesta_ia['message']['content']}'")
 
 async def handle_audio_message(phone_number: str, media_id: str, session_data: Dict[str, Any]):
     # ... (código existente)

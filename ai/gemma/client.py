@@ -111,6 +111,7 @@ async def generate_chat_response(
          return {"success": False, "error": "No user message provided."}
 
     logger.debug(f"Invocando LLM ({llm.model_name}) con {len(lc_messages)} mensajes.")
+    logger.info(f"Enviando petición a OpenRouter con el modelo {llm.model_name}...")
 
     try:
         # Usar el método invoke de Langchain
@@ -143,7 +144,7 @@ async def generate_chat_response(
     except Exception as e:
         end_time = datetime.now()
         duration_ms = (end_time - start_time).total_seconds() * 1000
-        logger.exception(f"Error al invocar LLM con Langchain: {e}")
+        logger.error(f"Error al invocar LLM con Langchain: {e}", exc_info=True)
         # Intentar obtener más detalles del error si es una APIError de OpenAI/Langchain
         error_details = str(e)
         status_code = None
